@@ -1,0 +1,830 @@
+import { useState, useEffect, useRef } from 'react';
+import type { SeatingChart, Student, SeatingConstraints } from './types';
+import { storageUtils } from './utils/storage';
+import { seatingUtils } from './utils/seating';
+import { generateRandomNamesWithGender } from './utils/names';
+import { StudentForm } from './components/StudentForm';
+import { SeatingGrid } from './components/SeatingGrid';
+import { StudentList } from './components/StudentList';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import './App.css';
+
+function App() {
+  const [charts, setCharts] = useState<SeatingChart[]>([]);
+  const [currentChartId, setCurrentChartId] = useState<string | null>(null);
+  const [gridSize, setGridSize] = useState({ rows: 4, cols: 5 });
+  const [chartName, setChartName] = useState('');
+  const [pairedSeating, setPairedSeating] = useState(false);
+
+  // Extra control state
+  const [showExtraControls, setShowExtraControls] = useState(false);
+  const [mixGenders, setMixGenders] = useState(false);
+  const [placeTogether, setPlaceTogether] = useState<string[][]>([]);
+  const [keepApart, setKeepApart] = useState<string[][]>([]);
+  const [newTogetherGroup, setNewTogetherGroup] = useState<string[]>([]);
+  const [newApartPair, setNewApartPair] = useState<string[]>([]);
+  const seatingGridRef = useRef<HTMLDivElement>(null);
+
+  // Load charts from storage on mount
+  useEffect(() => {
+    const loadedCharts = storageUtils.getCharts();
+    setCharts(loadedCharts);
+    if (loadedCharts.length > 0) {
+      setCurrentChartId(loadedCharts[0].id);
+    }
+  }, []);
+
+  // Save current chart whenever it changes
+  useEffect(() => {
+    const chart = charts.find(c => c.id === currentChartId);
+    if (chart) {
+      storageUtils.saveChart(chart);
+    }
+  }, [charts, currentChartId]);
+
+  // Update grid size inputs when selecting a different chart
+  useEffect(() => {
+    const chart = charts.find(c => c.id === currentChartId);
+    if (chart) {
+      setGridSize({ rows: chart.rows, cols: chart.cols });
+      setPairedSeating(chart.pairedSeating || false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChartId]);
+
+  const currentChart = charts.find(c => c.id === currentChartId) || null;
+  const unplacedStudents = currentChart ? seatingUtils.getUnplacedStudents(currentChart) : [];
+
+  const handleCreateChart = () => {
+    if (!chartName.trim()) {
+      alert('Vennligst skriv inn et kartnavn');
+      return;
+    }
+
+    const newChart = seatingUtils.createChart(chartName, gridSize.rows, gridSize.cols, pairedSeating);
+    const updatedCharts = [...charts, newChart];
+    setCharts(updatedCharts);
+    setCurrentChartId(newChart.id);
+    setChartName('');
+    setPairedSeating(false);
+  };
+
+  const handleDeleteChart = (chartId: string) => {
+    if (window.confirm('Er du sikker på at du vil slette dette kartet?')) {
+      const updated = charts.filter(c => c.id !== chartId);
+      setCharts(updated);
+      storageUtils.deleteChart(chartId);
+      if (currentChartId === chartId) {
+        setCurrentChartId(updated.length > 0 ? updated[0].id : null);
+      }
+    }
+  };
+
+  const handleExportCharts = () => {
+    if (charts.length === 0) {
+      alert('Ingen kart å eksportere');
+      return;
+    }
+    const dataStr = JSON.stringify(charts, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'klasseromskart.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCharts = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedCharts = JSON.parse(event.target?.result as string);
+        if (!Array.isArray(importedCharts)) {
+          alert('Ugyldig filformat');
+          return;
+        }
+        
+        // Ask if they want to replace or merge
+        const shouldReplace = window.confirm(
+          'Vil du erstatte alle eksisterende kart? Klikk OK for å erstatte, eller Avbryt for å legge til.'
+        );
+        
+        if (shouldReplace) {
+          setCharts(importedCharts);
+          if (importedCharts.length > 0) {
+            setCurrentChartId(importedCharts[0].id);
+          }
+        } else {
+          // Merge, avoiding duplicate IDs
+          const existingIds = new Set(charts.map(c => c.id));
+          const newCharts = importedCharts.filter((c: { id: string }) => !existingIds.has(c.id));
+          const merged = [...charts, ...newCharts];
+          setCharts(merged);
+        }
+        
+        alert(`Importerte ${importedCharts.length} kart`);
+      } catch {
+        alert('Kunne ikke lese filen. Sørg for at det er en gyldig JSON-fil.');
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleUpdateChartSize = () => {
+    if (!currentChart) {
+      alert('Velg et kart å oppdatere');
+      return;
+    }
+    
+    const newRows = gridSize.rows;
+    const newCols = gridSize.cols;
+    
+    // Create new grid with new dimensions
+    const newGrid: (Student | null)[][] = Array.from({ length: newRows }, () =>
+      Array.from({ length: newCols }, () => null)
+    );
+    
+    // Copy over students that fit in the new grid
+    for (let r = 0; r < Math.min(currentChart.rows, newRows); r++) {
+      for (let c = 0; c < Math.min(currentChart.cols, newCols); c++) {
+        newGrid[r][c] = currentChart.grid[r][c];
+      }
+    }
+    
+    const updatedChart = {
+      ...currentChart,
+      rows: newRows,
+      cols: newCols,
+      grid: newGrid,
+      pairedSeating: pairedSeating,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+  };
+
+  const handleAddStudents = (students: Student[]) => {
+    if (!currentChart) return;
+    let updated = currentChart;
+    students.forEach(student => {
+      updated = seatingUtils.addStudent(updated, student);
+    });
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleRemoveStudent = (studentId: string) => {
+    if (!currentChart) return;
+    const updated = seatingUtils.removeStudent(currentChart, studentId);
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleUpdateStudent = (student: Student) => {
+    if (!currentChart) return;
+    const updatedStudents = currentChart.students.map(s =>
+      s.id === student.id ? student : s
+    );
+    const updatedChart = { ...currentChart, students: updatedStudents };
+    setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+  };
+
+  const handleSwapStudents = (row1: number, col1: number, row2: number, col2: number) => {
+    if (!currentChart) return;
+    const updated = seatingUtils.swapStudents(currentChart, row1, col1, row2, col2);
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleSwapPairs = (row1: number, col1: number, row2: number, col2: number) => {
+    if (!currentChart) return;
+    // Swap both students in each pair
+    const newGrid = currentChart.grid.map(r => [...r]);
+    
+    // Get the two students from source pair
+    const source1 = newGrid[row1][col1];
+    const source2 = col1 + 1 < currentChart.cols ? newGrid[row1][col1 + 1] : null;
+    
+    // Get the two students from target pair
+    const target1 = newGrid[row2][col2];
+    const target2 = col2 + 1 < currentChart.cols ? newGrid[row2][col2 + 1] : null;
+    
+    // Swap them
+    newGrid[row1][col1] = target1;
+    if (col1 + 1 < currentChart.cols) newGrid[row1][col1 + 1] = target2;
+    newGrid[row2][col2] = source1;
+    if (col2 + 1 < currentChart.cols) newGrid[row2][col2 + 1] = source2;
+    
+    const updatedChart = {
+      ...currentChart,
+      grid: newGrid,
+      updatedAt: new Date().toISOString()
+    };
+    setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+  };
+
+  const handleDropFromGrid = (studentId: string) => {
+    if (!currentChart) return;
+    const updated = { ...currentChart };
+    // Find the student in the grid and unplace them
+    for (let r = 0; r < updated.rows; r++) {
+      for (let c = 0; c < updated.cols; c++) {
+        if (updated.grid[r][c]?.id === studentId) {
+          updated.grid[r][c] = null;
+          updated.updatedAt = new Date().toISOString();
+          setCharts(charts.map(ch => ch.id === currentChart.id ? updated : ch));
+          return;
+        }
+      }
+    }
+  };
+
+  const handlePlaceStudent = (studentId: string, row: number, col: number) => {
+    if (!currentChart) return;
+    const updated = seatingUtils.placeStudent(currentChart, studentId, row, col);
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleRemoveFromSeat = (row: number, col: number) => {
+    if (!currentChart) return;
+    const updated = { ...currentChart };
+    const student = updated.grid[row][col];
+    if (student) {
+      updated.grid[row][col] = null;
+      updated.updatedAt = new Date().toISOString();
+    }
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleClearPlacements = () => {
+    if (!currentChart) return;
+    if (window.confirm('Fjerne alle elevplasseringer?')) {
+      const updated = seatingUtils.clearPlacements(currentChart);
+      setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+    }
+  };
+
+  const handleRandomizeSeating = () => {
+    if (!currentChart) return;
+    
+    // Count unlocked students (both placed and unplaced)
+    const lockedIds = new Set<string>();
+    for (let r = 0; r < currentChart.rows; r++) {
+      for (let c = 0; c < currentChart.cols; c++) {
+        const student = currentChart.grid[r][c];
+        if (student?.locked) lockedIds.add(student.id);
+      }
+    }
+    const unlockedCount = currentChart.students.filter(s => !lockedIds.has(s.id)).length;
+    
+    if (unlockedCount === 0) {
+      alert('Ingen ulåste elever å plassere');
+      return;
+    }
+    if (window.confirm(`Plassere ${unlockedCount} ulåste elev${unlockedCount !== 1 ? 'er' : ''} tilfeldig?`)) {
+      const constraints: SeatingConstraints = {
+        placeTogether,
+        keepApart,
+        mixGenders
+      };
+      const updated = seatingUtils.randomizeSeating(currentChart, constraints);
+      setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+    }
+  };
+
+  const handleClearAllStudents = () => {
+    if (!currentChart) return;
+    if (window.confirm('Fjerne alle elever fra dette kartet?')) {
+      const updatedChart = {
+        ...currentChart,
+        students: [],
+        grid: Array.from({ length: currentChart.rows }, () =>
+          Array.from({ length: currentChart.cols }, () => null)
+        ),
+        updatedAt: new Date().toISOString()
+      };
+      setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+    }
+  };
+
+  const handleShuffleSeated = () => {
+    if (!currentChart) return;
+    // Count unlocked seated students
+    let unlockedCount = 0;
+    for (let r = 0; r < currentChart.rows; r++) {
+      for (let c = 0; c < currentChart.cols; c++) {
+        if (currentChart.grid[r][c] && !currentChart.grid[r][c]?.locked) unlockedCount++;
+      }
+    }
+    if (unlockedCount < 2) {
+      alert('Trenger minst 2 ulåste plasserte elever for å blande');
+      return;
+    }
+    const constraints: SeatingConstraints = {
+      placeTogether,
+      keepApart,
+      mixGenders
+    };
+    const updated = seatingUtils.shuffleSeatedStudents(currentChart, constraints);
+    setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
+  };
+
+  const handleToggleLock = (studentId: string) => {
+    if (!currentChart) return;
+    // Update the student's locked status in both students array and grid
+    const updatedStudents = currentChart.students.map(s =>
+      s.id === studentId ? { ...s, locked: !s.locked } : s
+    );
+    const updatedGrid = currentChart.grid.map(row =>
+      row.map(cell =>
+        cell?.id === studentId ? { ...cell, locked: !cell.locked } : cell
+      )
+    );
+    const updatedChart = {
+      ...currentChart,
+      students: updatedStudents,
+      grid: updatedGrid,
+      updatedAt: new Date().toISOString()
+    };
+    setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!seatingGridRef.current || !currentChart) return;
+    
+    const container = seatingGridRef.current;
+    
+    // Temporarily hide elements we don't want in the PDF
+    const lockButtons = container.querySelectorAll('.lock-button');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const seatLabels = container.querySelectorAll('.seat-label');
+    
+    // Temporarily remove background colors
+    const gridContainer = container;
+    const seatingGrid = container.querySelector('.seating-grid') as HTMLElement;
+    const originalContainerBg = gridContainer.style.backgroundColor;
+    const originalGridBg = seatingGrid?.style.backgroundColor;
+    const originalGridShadow = seatingGrid?.style.boxShadow;
+    
+    gridContainer.style.backgroundColor = 'white';
+    if (seatingGrid) {
+      seatingGrid.style.backgroundColor = 'white';
+      seatingGrid.style.boxShadow = 'none';
+    }
+    
+    lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
+    seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
+    
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      
+      // A4 landscape dimensions in mm
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 15; // 15mm margins
+      
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const availableWidth = pageWidth - (margin * 2);
+      const availableHeight = pageHeight - (margin * 2);
+      const contentRatio = canvas.width / canvas.height;
+      
+      // Scale image to fit within printable area while maintaining aspect ratio
+      let imgWidth = availableWidth;
+      let imgHeight = imgWidth / contentRatio;
+      
+      if (imgHeight > availableHeight) {
+        imgHeight = availableHeight;
+        imgWidth = imgHeight * contentRatio;
+      }
+      
+      // Center the image on the page
+      const xOffset = margin + (availableWidth - imgWidth) / 2;
+      const yOffset = margin + (availableHeight - imgHeight) / 2;
+      
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+      pdf.save(`${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_seating_chart.pdf`);
+    } finally {
+      // Restore hidden elements and backgrounds
+      lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      pairHandles.forEach(el => (el as HTMLElement).style.display = '');
+      seatLabels.forEach(el => (el as HTMLElement).style.display = '');
+      gridContainer.style.backgroundColor = originalContainerBg;
+      if (seatingGrid) {
+        seatingGrid.style.backgroundColor = originalGridBg || '';
+        seatingGrid.style.boxShadow = originalGridShadow || '';
+      }
+    }
+  };
+
+  const handlePrintChart = async () => {
+    if (!seatingGridRef.current || !currentChart) return;
+    
+    const container = seatingGridRef.current;
+    
+    // Temporarily hide elements we don't want in the print
+    const lockButtons = container.querySelectorAll('.lock-button');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const seatLabels = container.querySelectorAll('.seat-label');
+    
+    // Temporarily remove background colors
+    const gridContainer = container;
+    const seatingGrid = container.querySelector('.seating-grid') as HTMLElement;
+    const originalContainerBg = gridContainer.style.backgroundColor;
+    const originalGridBg = seatingGrid?.style.backgroundColor;
+    const originalGridShadow = seatingGrid?.style.boxShadow;
+    
+    gridContainer.style.backgroundColor = 'white';
+    if (seatingGrid) {
+      seatingGrid.style.backgroundColor = 'white';
+      seatingGrid.style.boxShadow = 'none';
+    }
+    
+    lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
+    seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
+    
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      
+      // A4 landscape dimensions in mm
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 15;
+      
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const availableWidth = pageWidth - (margin * 2);
+      const availableHeight = pageHeight - (margin * 2);
+      const contentRatio = canvas.width / canvas.height;
+      
+      let imgWidth = availableWidth;
+      let imgHeight = imgWidth / contentRatio;
+      
+      if (imgHeight > availableHeight) {
+        imgHeight = availableHeight;
+        imgWidth = imgHeight * contentRatio;
+      }
+      
+      const xOffset = margin + (availableWidth - imgWidth) / 2;
+      const yOffset = margin + (availableHeight - imgHeight) / 2;
+      
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+      
+      // Open PDF in new window and trigger print
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const printWindow = window.open(pdfUrl);
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    } finally {
+      // Restore hidden elements and backgrounds
+      lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      pairHandles.forEach(el => (el as HTMLElement).style.display = '');
+      seatLabels.forEach(el => (el as HTMLElement).style.display = '');
+      gridContainer.style.backgroundColor = originalContainerBg;
+      if (seatingGrid) {
+        seatingGrid.style.backgroundColor = originalGridBg || '';
+        seatingGrid.style.boxShadow = originalGridShadow || '';
+      }
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>Klassekart</h1>
+        <p>Organiser og administrer elevplasseringer</p>
+      </header>
+
+      <div className="app-container">
+        <aside className="sidebar">
+          <div className="chart-creation">
+            <h3>Opprett nytt klassekart</h3>
+            <input
+              type="text"
+              placeholder="Kartnavn (f.eks. Time 1)"
+              value={chartName}
+              onChange={(e) => setChartName(e.target.value)}
+            />
+            
+            <div className="grid-size-inputs">
+              <div className="size-input">
+                <label>Rader:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={gridSize.rows}
+                  onChange={(e) => setGridSize({...gridSize, rows: parseInt(e.target.value) || 1})}
+                />
+              </div>
+              <div className="size-input">
+                <label>Kolonner:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={gridSize.cols}
+                  onChange={(e) => setGridSize({...gridSize, cols: parseInt(e.target.value) || 1})}
+                />
+              </div>
+            </div>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={pairedSeating}
+                onChange={(e) => setPairedSeating(e.target.checked)}
+              />
+              Bruk Makkerpar
+            </label>
+            <div className="chart-buttons">
+              <button className="btn btn-primary" onClick={handleCreateChart}>
+                Nytt klassekart
+              </button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={handleUpdateChartSize}
+                disabled={!currentChart}
+                title={currentChart ? `Oppdater ${currentChart.name}` : 'Velg et kart først'}
+              >
+                Oppdater klassekart
+              </button>
+            </div>
+          </div>
+
+          <div className="charts-list">
+            <h3>Plasseringskart</h3>
+            {charts.length === 0 ? (
+              <p className="empty-message">Ingen kart ennå</p>
+            ) : (
+              <ul>
+                {charts.map(chart => (
+                  <li key={chart.id}>
+                    <button
+                      className={`chart-item ${currentChartId === chart.id ? 'active' : ''}`}
+                      onClick={() => setCurrentChartId(chart.id)}
+                    >
+                      {chart.name}
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDeleteChart(chart.id)}
+                      title="Slett"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="import-export">
+            <button className="btn btn-secondary btn-full" onClick={handleExportCharts}>
+              Eksporter til fil
+            </button>
+            <label className="btn btn-secondary btn-full import-label">
+              Importer fra fil
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportCharts}
+                style={{ display: 'none' }}
+              />
+            </label>
+            <p className="import-export-hint">
+              <strong>Eksporter til fil:</strong> Lagre dataene dine til en fil på datamaskinen.
+            </p>
+            <p className="import-export-hint">
+              <strong>Importer fra fil:</strong> Hent tilbake lagrede data eller overfør fra en annen nettleser.
+            </p>
+          </div>
+        </aside>
+
+        <main className="main-content">
+          {currentChart ? (
+            <>
+              <StudentForm onAddStudent={handleAddStudents} />
+
+              <StudentList
+                students={unplacedStudents}
+                onRemoveStudent={handleRemoveStudent}
+                onUpdateStudent={handleUpdateStudent}
+                onDropFromGrid={handleDropFromGrid}
+              />
+
+              <div className="controls">
+                <button className="btn btn-secondary" onClick={handleRandomizeSeating}>
+                  Automatisk plassering
+                </button>
+                <button className="btn btn-secondary" onClick={handleShuffleSeated}>
+                  Bland plasserte
+                </button>
+                <button className="btn btn-secondary" onClick={handleClearPlacements}>
+                  Fjern plasseringer
+                </button>
+                <button className="btn btn-secondary" onClick={handleClearAllStudents}>
+                  Fjern alle elever
+                </button>
+                <button 
+                  className={`btn btn-compact ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setShowExtraControls(!showExtraControls)}
+                >
+                  {showExtraControls ? 'Skjul' : 'Alternativer'}
+                </button>
+                <button className="btn btn-secondary" onClick={handleGeneratePDF}>
+                  Lagre PDF
+                </button>
+                <button className="btn btn-secondary" onClick={handlePrintChart}>
+                  Print klassekart
+                </button>
+              </div>
+
+              {showExtraControls && (
+                <div className="extra-controls">
+                  <h3>Plasseringsalternativer</h3>
+                  
+                  <div className="control-section">
+                    <button 
+                      className="btn btn-secondary btn-full"
+                      onClick={() => {
+                        const randomStudents = generateRandomNamesWithGender(30);
+                        const students: Student[] = randomStudents.map(s => ({
+                          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                          name: s.name,
+                          gender: s.gender
+                        }));
+                        handleAddStudents(students);
+                      }}
+                    >
+                      Generer 30 tilfeldige navn
+                    </button>
+                  </div>
+                  
+                  <div className="control-section">
+                    <label className="toggle-label">
+                      <input
+                        type="checkbox"
+                        checked={mixGenders}
+                        onChange={(e) => setMixGenders(e.target.checked)}
+                      />
+                      Bland kjønn (veksle mellom gutter og jenter)
+                    </label>
+                  </div>
+
+                  <div className="control-section">
+                    <h4>Plasser sammen</h4>
+                    <p className="control-hint">Velg elever som skal sitte ved siden av hverandre (hold Ctrl/Cmd for å velge flere)</p>
+                    <div className="student-select-group">
+                      <select
+                        multiple
+                        value={newTogetherGroup}
+                        onChange={(e) => setNewTogetherGroup(
+                          Array.from(e.target.selectedOptions, opt => opt.value)
+                        )}
+                        className="student-multi-select"
+                      >
+                        {currentChart.students.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <button 
+                        className="btn btn-small"
+                        onClick={() => {
+                          if (newTogetherGroup.length >= 2) {
+                            setPlaceTogether([...placeTogether, newTogetherGroup]);
+                            setNewTogetherGroup([]);
+                          } else {
+                            alert('Velg minst 2 elever');
+                          }
+                        }}
+                      >
+                        Legg til gruppe
+                      </button>
+                    </div>
+                    {placeTogether.length > 0 && (
+                      <div className="constraint-list">
+                        {placeTogether.map((group, idx) => (
+                          <div key={idx} className="constraint-item">
+                            <span>
+                              {group.map(id => 
+                                currentChart.students.find(s => s.id === id)?.name
+                              ).join(' + ')}
+                            </span>
+                            <button 
+                              className="btn-remove"
+                              onClick={() => setPlaceTogether(placeTogether.filter((_, i) => i !== idx))}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="control-section">
+                    <h4>Hold fra hverandre</h4>
+                    <p className="control-hint">Velg elever som IKKE skal sitte ved siden av hverandre (hold Ctrl/Cmd for å velge flere)</p>
+                    <div className="student-select-group">
+                      <select
+                        multiple
+                        value={newApartPair}
+                        onChange={(e) => setNewApartPair(
+                          Array.from(e.target.selectedOptions, opt => opt.value)
+                        )}
+                        className="student-multi-select"
+                      >
+                        {currentChart.students.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <button 
+                        className="btn btn-small"
+                        onClick={() => {
+                          if (newApartPair.length >= 2) {
+                            setKeepApart([...keepApart, newApartPair]);
+                            setNewApartPair([]);
+                          } else {
+                            alert('Velg minst 2 elever');
+                          }
+                        }}
+                      >
+                        Legg til par
+                      </button>
+                    </div>
+                    {keepApart.length > 0 && (
+                      <div className="constraint-list">
+                        {keepApart.map((pair, idx) => (
+                          <div key={idx} className="constraint-item apart">
+                            <span>
+                              {pair.map(id => 
+                                currentChart.students.find(s => s.id === id)?.name
+                              ).join(' ≠ ')}
+                            </span>
+                            <button 
+                              className="btn-remove"
+                              onClick={() => setKeepApart(keepApart.filter((_, i) => i !== idx))}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <SeatingGrid
+                ref={seatingGridRef}
+                chart={currentChart}
+                onPlaceStudent={handlePlaceStudent}
+                onRemoveStudent={handleRemoveFromSeat}
+                onSwapStudents={handleSwapStudents}
+                onSwapPairs={handleSwapPairs}
+                onToggleLock={handleToggleLock}
+              />
+            </>
+          ) : (
+            <div className="empty-state">
+              <h2>Ingen plasseringskart valgt</h2>
+              <p>Opprett et nytt kart for å komme i gang</p>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,144 @@
+.seating-grid-container {
+  width: 100%;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 8px;
+}
+
+.seating-grid-container h2 {
+  margin-top: 0;
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.whiteboard {
+  background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
+  border: 3px solid #999;
+  border-radius: 4px;
+  padding: 12px 40px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.whiteboard span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  letter-spacing: 2px;
+}
+
+.seating-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.seating-row {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.seating-grid.paired .seating-row {
+  gap: 4px;
+}
+
+.seating-grid.paired .seating-cell.pair-end {
+  margin-right: 0;
+}
+
+.seat-pair {
+  display: flex;
+  gap: 4px;
+  margin-right: 36px;
+  position: relative;
+  padding-top: 20px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.seat-pair:last-child {
+  margin-right: 0;
+}
+
+.seat-pair.pair-drag-over {
+  background-color: #e3f2fd;
+  box-shadow: 0 0 0 2px #2196f3;
+}
+
+.pair-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: grab;
+  font-size: 14px;
+  color: #999;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.pair-drag-handle:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.pair-drag-handle:active {
+  cursor: grabbing;
+}
+
+.seating-cell {
+  position: relative;
+  width: 120px;
+  height: 140px;
+  padding: 0;
+}
+
+.seating-cell.drag-over {
+  background-color: #d7e5f0;
+  box-shadow: inset 0 0 0 2px #73787c, 0 0 12px rgba(115, 120, 124, 0.3);
+  border-radius: 4px;
+  height: 100px;
+}
+
+.seating-cell.drag-over .student-card {
+  opacity: 0.4;
+  color: #b0b2b1;
+}
+
+.seat-label {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .seating-cell {
+    width: 100px;
+    height: 120px;
+  }
+
+  .seating-row {
+    gap: 8px;
+  }
+
+  .seating-grid {
+    padding: 10px;
+    gap: 8px;
+  }
+}

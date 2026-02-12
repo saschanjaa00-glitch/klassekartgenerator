@@ -1,0 +1,121 @@
+.student-list {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+
+.student-list.drag-over {
+  background-color: #d7e5f0;
+  border: 2px dashed #73787c;
+}
+
+.student-list h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.empty-message {
+  color: #999;
+  font-style: italic;
+  margin: 0;
+}
+
+.student-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.student-list-item {
+  position: relative;
+}
+
+.student-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gender-toggle {
+  display: flex;
+  gap: 4px;
+  margin-top: -4px;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.gender-icon {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #e0e0e0;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.gender-icon:hover {
+  transform: scale(1.1);
+}
+
+.gender-icon.male:hover {
+  background: #a8d4f7;
+  color: #1976d2;
+}
+
+.gender-icon.female:hover {
+  background: #f8b4c8;
+  color: #c2185b;
+}
+
+.gender-icon.male.selected {
+  background: #64b5f6;
+  color: white;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.4);
+}
+
+.gender-icon.female.selected {
+  background: #f48fb1;
+  color: white;
+  box-shadow: 0 2px 4px rgba(194, 24, 91, 0.4);
+}
+
+.btn-remove-student {
+  position: absolute;
+  top: -4px;
+  right: 2px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-student:hover {
+  background-color: #c0392b;
+  transform: scale(1.1);
+}
+
+.btn-remove-student:active {
+  transform: scale(0.95);
+}

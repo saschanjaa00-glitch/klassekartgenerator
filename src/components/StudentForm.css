@@ -1,0 +1,130 @@
+.student-form {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.student-form h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #73787c;
+  box-shadow: 0 0 0 3px rgba(115, 120, 124, 0.1);
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #73787c;
+  box-shadow: 0 0 0 3px rgba(115, 120, 124, 0.1);
+}
+
+.hint {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
+}
+
+.line-count {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #73787c;
+  font-weight: 500;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c00;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background-color: #73787c;
+  color: white;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background-color: #5a5f63;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: #c5c8c7;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #b0b2b1;
+  transform: translateY(-2px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}

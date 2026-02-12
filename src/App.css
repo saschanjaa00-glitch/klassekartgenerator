@@ -1,0 +1,441 @@
+.app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #d7e5f0 0%, #c5c8c7 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background-color: #73787c;
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.app-header p {
+  margin: 10px 0 0 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.app-container {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chart-creation,
+.charts-list {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-creation h3,
+.charts-list h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.chart-creation input[type="text"],
+.size-input input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.chart-creation input[type="text"]:focus,
+.size-input input:focus {
+  outline: none;
+  border-color: #73787c;
+  box-shadow: 0 0 0 3px rgba(115, 120, 124, 0.1);
+}
+
+.grid-size-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.chart-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.chart-buttons .btn {
+  flex: 1;
+  font-size: 13px;
+  padding: 10px 8px;
+}
+
+.chart-buttons .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.size-input {
+  display: flex;
+  flex-direction: column;
+}
+
+.size-input label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.charts-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.charts-list li {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.chart-item {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  color: #333;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.chart-item:hover {
+  border-color: #73787c;
+  background-color: #d7e5f0;
+}
+
+.chart-item.active {
+  background-color: #73787c;
+  color: white;
+  border-color: transparent;
+}
+
+.btn-delete {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.empty-message {
+  color: #999;
+  font-style: italic;
+  margin: 10px 0;
+}
+
+.import-export {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-full {
+  width: 100%;
+  text-align: center;
+}
+
+.import-label {
+  cursor: pointer;
+  display: block;
+}
+
+.import-export-hint {
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0 0 0;
+  line-height: 1.4;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.controls {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: #73787c;
+  color: white;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background-color: #5a5f63;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-compact {
+  padding: 8px 12px;
+  font-size: 13px;
+  width: auto;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: #c5c8c7;
+  color: #333;
+  border: 1px solid #b0b2b1;
+}
+
+.btn-secondary:hover {
+  background-color: #b0b2b1;
+  border-color: #999;
+}
+
+.empty-state {
+  background-color: white;
+  padding: 60px 20px;
+  border-radius: 8px;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Extra Controls */
+.extra-controls {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.extra-controls h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.extra-controls h4 {
+  margin: 0 0 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.control-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.control-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.control-hint {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 10px 0;
+}
+
+.student-select-group {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.student-multi-select {
+  flex: 1;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.student-multi-select:focus {
+  outline: none;
+  border-color: #73787c;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+  background-color: #73787c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  background-color: #5a5f62;
+}
+
+.constraint-list {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.constraint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e8f5e9;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.constraint-item.apart {
+  background-color: #ffebee;
+}
+
+.constraint-item .btn-remove {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  line-height: 1;
+}
+
+.constraint-item .btn-remove:hover {
+  color: #333;
+}
+
+@media (max-width: 1024px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 20px;
+  }
+
+  .app-header h1 {
+    font-size: 24px;
+  }
+
+  .app-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .sidebar {
+    gap: 10px;
+  }
+
+  .chart-creation,
+  .charts-list {
+    padding: 15px;
+  }
+}
