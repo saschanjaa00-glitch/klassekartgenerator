@@ -51,6 +51,13 @@
   opacity: 0.7;
 }
 
+.student-card.filled.preview {
+  background-color: #f5f5f5;
+  border: 2px dashed #999;
+  box-shadow: none;
+  color: #999;
+}
+
 .lock-button {
   position: absolute;
   top: 4px;
@@ -72,6 +79,32 @@
   opacity: 1;
 }
 
+.remove-button {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.remove-button:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: #c0392b;
+}
+
 .student-card {
   position: relative;
 }
@@ -83,4 +116,44 @@
 .empty-seat {
   font-size: 12px;
   color: #999;
+}
+
+/* Print styles for student cards */
+@media print {
+  .student-card {
+    min-height: 70px;
+    padding: 8px;
+    font-size: 11px;
+    cursor: default;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .student-card.filled {
+    border: 1px solid #333;
+    background-color: white !important;
+  }
+
+  .student-card.filled.locked {
+    background-color: #fff8e1 !important;
+  }
+
+  .student-card.empty {
+    background-color: #f5f5f5 !important;
+    border: 1px dashed #ccc;
+  }
+
+  .lock-button {
+    display: none;
+  }
+
+  .remove-button {
+    display: none;
+  }
+
+  .student-list-item .student-card {
+    min-height: 50px;
+    width: 100px;
+  }
 }

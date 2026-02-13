@@ -25,6 +25,17 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
 ) => {
   const [dragOverPos, setDragOverPos] = useState<{ row: number; col: number } | null>(null);
   const [dragOverPair, setDragOverPair] = useState<{ row: number; pairIndex: number } | null>(null);
+  const [dragSource, setDragSource] = useState<{ row: number; col: number } | null>(null);
+  const [dragSourcePair, setDragSourcePair] = useState<{ row: number; pairIndex: number } | null>(null);
+
+  const handleCellDragStart = (row: number, col: number) => {
+    setDragSource({ row, col });
+  };
+
+  const handleCellDragEnd = () => {
+    setDragSource(null);
+    setDragOverPos(null);
+  };
 
   const handleDragOver = (row: number, col: number) => (e: React.DragEvent) => {
     e.preventDefault();
@@ -49,6 +60,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const handleDrop = (row: number, col: number) => (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverPos(null);
+    setDragSource(null);
     
     const studentId = e.dataTransfer.getData('studentId');
     if (!studentId) return;
@@ -75,21 +87,45 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const handlePairDragStart = (row: number, pairIndex: number) => (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('pairDrag', JSON.stringify({ row, pairIndex }));
+    setDragSourcePair({ row, pairIndex });
+    
+    // Use the entire seat-pair as drag image
+    const handle = e.currentTarget as HTMLElement;
+    const seatPair = handle.parentElement;
+    if (seatPair) {
+      // Calculate offset to center the drag image on cursor
+      const rect = seatPair.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      e.dataTransfer.setDragImage(seatPair, offsetX, offsetY);
+    }
+  };
+
+  const handlePairDragEnd = () => {
+    setDragSourcePair(null);
+    setDragOverPair(null);
   };
 
   const handlePairDragOver = (row: number, pairIndex: number) => (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverPair({ row, pairIndex });
+    // Only highlight pair if dragging a pair (check types includes pairDrag)
+    if (e.dataTransfer.types.includes('pairdrag')) {
+      setDragOverPair({ row, pairIndex });
+    }
   };
 
-  const handlePairDragLeave = () => {
-    setDragOverPair(null);
+  const handlePairDragLeave = (e: React.DragEvent) => {
+    // Only clear pair highlight if it was a pair drag
+    if (e.dataTransfer.types.includes('pairdrag')) {
+      setDragOverPair(null);
+    }
   };
 
   const handlePairDrop = (targetRow: number, targetPairIndex: number) => (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverPair(null);
+    setDragSourcePair(null);
     
     const pairData = e.dataTransfer.getData('pairDrag');
     if (!pairData || !onSwapPairs) return;
@@ -104,12 +140,6 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     onSwapPairs(sourceRow, sourceCol, targetRow, targetCol);
   };
 
-  const handleCellClick = (row: number, col: number) => {
-    if (chart.grid[row][col]) {
-      onRemoveStudent(row, col);
-    }
-  };
-
   // Helper to group columns into pairs
   const getPairs = (row: (typeof chart.grid)[0]) => {
     const pairs: { col1: number; col2: number | null }[] = [];
@@ -119,27 +149,64 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     return pairs;
   };
 
-  const renderCell = (student: typeof chart.grid[0][0], rowIndex: number, colIndex: number) => (
-    <div
-      key={`${rowIndex}-${colIndex}`}
-      className={`seating-cell ${
-        dragOverPos?.row === rowIndex && dragOverPos?.col === colIndex
-          ? 'drag-over'
-          : ''
-      } ${chart.pairedSeating && colIndex % 2 === 1 ? 'pair-end' : ''}`}
-      onDragOver={handleDragOver(rowIndex, colIndex)}
-      onDragEnter={handleDragEnter(rowIndex, colIndex)}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop(rowIndex, colIndex)}
-    >
-      <StudentCard
-        student={student}
-        onClick={() => handleCellClick(rowIndex, colIndex)}
-        draggable={!!student}
-        onToggleLock={onToggleLock}
-      />
-    </div>
-  );
+  const renderCell = (student: typeof chart.grid[0][0], rowIndex: number, colIndex: number) => {
+    const isDragOver = dragOverPos?.row === rowIndex && dragOverPos?.col === colIndex;
+    const isDragSource = dragSource?.row === rowIndex && dragSource?.col === colIndex;
+    
+    // Check if this cell is part of a pair being dragged or hovered
+    const pairIndex = Math.floor(colIndex / 2);
+    const isInSourcePair = dragSourcePair?.row === rowIndex && dragSourcePair?.pairIndex === pairIndex;
+    const isInTargetPair = dragOverPair?.row === rowIndex && dragOverPair?.pairIndex === pairIndex;
+    
+    // Determine what student to show (for swap preview)
+    let displayStudent = student;
+    let isPreview = false;
+    
+    // Individual student swap preview
+    if (isDragOver && dragSource && chart.grid[dragSource.row][dragSource.col]) {
+      displayStudent = chart.grid[dragSource.row][dragSource.col];
+      isPreview = true;
+    }
+    else if (isDragSource && dragOverPos && chart.grid[dragOverPos.row][dragOverPos.col]) {
+      displayStudent = chart.grid[dragOverPos.row][dragOverPos.col];
+      isPreview = true;
+    }
+    // Pair swap preview - target pair shows source pair's students
+    else if (isInTargetPair && dragSourcePair && (dragSourcePair.pairIndex !== pairIndex || dragSourcePair.row !== rowIndex)) {
+      // Show the student from source pair at equivalent position
+      const sourceCol = dragSourcePair.pairIndex * 2 + (colIndex % 2);
+      displayStudent = chart.grid[dragSourcePair.row]?.[sourceCol] || null;
+      isPreview = true;
+    }
+    // Pair swap preview - source pair shows target pair's students
+    else if (isInSourcePair && dragOverPair && (dragOverPair.pairIndex !== pairIndex || dragOverPair.row !== rowIndex)) {
+      // Show the student from target pair at equivalent position
+      const targetCol = dragOverPair.pairIndex * 2 + (colIndex % 2);
+      displayStudent = chart.grid[dragOverPair.row]?.[targetCol] || null;
+      isPreview = true;
+    }
+    
+    return (
+      <div
+        key={`${rowIndex}-${colIndex}`}
+        className={`seating-cell ${isDragOver ? 'drag-over' : ''} ${isPreview ? 'swap-preview' : ''} ${chart.pairedSeating && colIndex % 2 === 1 ? 'pair-end' : ''}`}
+        onDragOver={handleDragOver(rowIndex, colIndex)}
+        onDragEnter={handleDragEnter(rowIndex, colIndex)}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop(rowIndex, colIndex)}
+      >
+        <StudentCard
+          student={displayStudent}
+          draggable={!!student}
+          onToggleLock={onToggleLock}
+          onRemove={student ? () => onRemoveStudent(rowIndex, colIndex) : undefined}
+          onDragStart={() => handleCellDragStart(rowIndex, colIndex)}
+          onDragEnd={handleCellDragEnd}
+          isPreview={isPreview}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="seating-grid-container" ref={ref}>
@@ -168,6 +235,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
                     className="pair-drag-handle"
                     draggable
                     onDragStart={handlePairDragStart(rowIndex, pairIndex)}
+                    onDragEnd={handlePairDragEnd}
                     title="Dra for å bytte dette paret"
                   >
                     ⋮⋮

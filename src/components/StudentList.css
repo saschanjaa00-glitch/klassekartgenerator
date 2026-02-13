@@ -119,3 +119,10 @@
 .btn-remove-student:active {
   transform: scale(0.95);
 }
+
+/* Print styles - hide unplaced students list */
+@media print {
+  .student-list {
+    display: none !important;
+  }
+}

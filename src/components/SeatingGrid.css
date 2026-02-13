@@ -32,7 +32,7 @@
 .seating-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   background-color: white;
   padding: 20px;
   border-radius: 8px;
@@ -70,8 +70,7 @@
 }
 
 .seat-pair.pair-drag-over {
-  background-color: #e3f2fd;
-  box-shadow: 0 0 0 2px #2196f3;
+  background-color: transparent;
 }
 
 .pair-drag-handle {
@@ -105,13 +104,14 @@
 }
 
 .seating-cell.drag-over {
-  background-color: #d7e5f0;
-  box-shadow: inset 0 0 0 2px #73787c, 0 0 12px rgba(115, 120, 124, 0.3);
   border-radius: 4px;
-  height: 100px;
 }
 
-.seating-cell.drag-over .student-card {
+.seating-cell.swap-preview {
+  border-radius: 4px;
+}
+
+.seating-cell.drag-over:not(.swap-preview) .student-card {
   opacity: 0.4;
   color: #b0b2b1;
 }
@@ -140,5 +140,67 @@
   .seating-grid {
     padding: 10px;
     gap: 8px;
+  }
+}
+
+/* Print styles - force proper grid layout */
+@media print {
+  .seating-grid-container {
+    padding: 0;
+    background-color: white;
+    width: 100%;
+  }
+
+  .seating-grid-container h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .whiteboard {
+    padding: 8px 20px;
+    margin-bottom: 10px;
+    box-shadow: none;
+    border: 2px solid #999;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .seating-grid {
+    padding: 10px;
+    gap: 6px;
+    box-shadow: none;
+    overflow: visible;
+    width: 100%;
+  }
+
+  .seating-row {
+    flex-wrap: nowrap !important;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .seating-grid.paired .seating-row {
+    gap: 4px;
+  }
+
+  .seat-pair {
+    margin-right: 20px;
+    padding-top: 15px;
+  }
+
+  .seating-cell {
+    width: 80px;
+    height: 90px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .seat-label {
+    font-size: 9px;
+    top: -15px;
+  }
+
+  .pair-drag-handle {
+    display: none;
   }
 }

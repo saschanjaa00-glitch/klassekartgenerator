@@ -13,9 +13,9 @@ import './App.css';
 function App() {
   const [charts, setCharts] = useState<SeatingChart[]>([]);
   const [currentChartId, setCurrentChartId] = useState<string | null>(null);
-  const [gridSize, setGridSize] = useState({ rows: 4, cols: 5 });
+  const [gridSize, setGridSize] = useState({ rows: 5, cols: 6 });
   const [chartName, setChartName] = useState('');
-  const [pairedSeating, setPairedSeating] = useState(false);
+  const [pairedSeating, setPairedSeating] = useState(true);
 
   // Extra control state
   const [showExtraControls, setShowExtraControls] = useState(false);
@@ -67,7 +67,7 @@ function App() {
     setCharts(updatedCharts);
     setCurrentChartId(newChart.id);
     setChartName('');
-    setPairedSeating(false);
+    setPairedSeating(true);
   };
 
   const handleDeleteChart = (chartId: string) => {
@@ -433,6 +433,57 @@ function App() {
     }
   };
 
+  const handleGeneratePNG = async () => {
+    if (!seatingGridRef.current || !currentChart) return;
+    
+    const container = seatingGridRef.current;
+    
+    // Temporarily hide elements we don't want in the PNG
+    const lockButtons = container.querySelectorAll('.lock-button');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const seatLabels = container.querySelectorAll('.seat-label');
+    
+    // Temporarily remove background colors
+    const gridContainer = container;
+    const seatingGrid = container.querySelector('.seating-grid') as HTMLElement;
+    const originalContainerBg = gridContainer.style.backgroundColor;
+    const originalGridBg = seatingGrid?.style.backgroundColor;
+    const originalGridShadow = seatingGrid?.style.boxShadow;
+    
+    gridContainer.style.backgroundColor = 'white';
+    if (seatingGrid) {
+      seatingGrid.style.backgroundColor = 'white';
+      seatingGrid.style.boxShadow = 'none';
+    }
+    
+    lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
+    seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
+    
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      });
+      
+      // Download as PNG
+      const link = document.createElement('a');
+      link.download = `${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_seating_chart.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      // Restore hidden elements and backgrounds
+      lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      pairHandles.forEach(el => (el as HTMLElement).style.display = '');
+      seatLabels.forEach(el => (el as HTMLElement).style.display = '');
+      gridContainer.style.backgroundColor = originalContainerBg;
+      if (seatingGrid) {
+        seatingGrid.style.backgroundColor = originalGridBg || '';
+        seatingGrid.style.boxShadow = originalGridShadow || '';
+      }
+    }
+  };
+
   const handlePrintChart = async () => {
     if (!seatingGridRef.current || !currentChart) return;
     
@@ -582,7 +633,7 @@ function App() {
           </div>
 
           <div className="charts-list">
-            <h3>Plasseringskart</h3>
+            <h3>Klassekartoversikt</h3>
             {charts.length === 0 ? (
               <p className="empty-message">Ingen kart ennå</p>
             ) : (
@@ -656,13 +707,16 @@ function App() {
                   Fjern alle elever
                 </button>
                 <button 
-                  className={`btn btn-compact ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
+                  className={`btn btn-toggle ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setShowExtraControls(!showExtraControls)}
                 >
                   {showExtraControls ? 'Skjul' : 'Alternativer'}
                 </button>
                 <button className="btn btn-secondary" onClick={handleGeneratePDF}>
                   Lagre PDF
+                </button>
+                <button className="btn btn-secondary" onClick={handleGeneratePNG}>
+                  Lagre bilde (PNG)
                 </button>
                 <button className="btn btn-secondary" onClick={handlePrintChart}>
                   Print klassekart
@@ -703,20 +757,32 @@ function App() {
 
                   <div className="control-section">
                     <h4>Plasser sammen</h4>
-                    <p className="control-hint">Velg elever som skal sitte ved siden av hverandre (hold Ctrl/Cmd for å velge flere)</p>
-                    <div className="student-select-group">
-                      <select
-                        multiple
-                        value={newTogetherGroup}
-                        onChange={(e) => setNewTogetherGroup(
-                          Array.from(e.target.selectedOptions, opt => opt.value)
-                        )}
-                        className="student-multi-select"
-                      >
-                        {currentChart.students.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
+                    <p className="control-hint">Velg 2 elever som skal sitte sammen</p>
+                    <div className="student-chips-container">
+                      {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                        const isInRule = placeTogether.some(group => group.includes(s.id));
+                        const isSelected = newTogetherGroup.includes(s.id);
+                        const isDisabled = isInRule || (!isSelected && newTogetherGroup.length >= 2);
+                        return (
+                          <button
+                            key={s.id}
+                            className={`student-chip ${isSelected ? 'selected' : ''} ${isInRule ? 'disabled-rule' : ''}`}
+                            disabled={isDisabled}
+                            onClick={() => {
+                              if (isDisabled) return;
+                              if (isSelected) {
+                                setNewTogetherGroup(newTogetherGroup.filter(id => id !== s.id));
+                              } else {
+                                setNewTogetherGroup([...newTogetherGroup, s.id]);
+                              }
+                            }}
+                          >
+                            {s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="student-select-actions">
                       <button 
                         className="btn btn-small"
                         onClick={() => {
@@ -730,6 +796,14 @@ function App() {
                       >
                         Legg til gruppe
                       </button>
+                      {newTogetherGroup.length > 0 && (
+                        <button 
+                          className="btn btn-small btn-clear"
+                          onClick={() => setNewTogetherGroup([])}
+                        >
+                          Nullstill
+                        </button>
+                      )}
                     </div>
                     {placeTogether.length > 0 && (
                       <div className="constraint-list">
@@ -754,20 +828,31 @@ function App() {
 
                   <div className="control-section">
                     <h4>Hold fra hverandre</h4>
-                    <p className="control-hint">Velg elever som IKKE skal sitte ved siden av hverandre (hold Ctrl/Cmd for å velge flere)</p>
-                    <div className="student-select-group">
-                      <select
-                        multiple
-                        value={newApartPair}
-                        onChange={(e) => setNewApartPair(
-                          Array.from(e.target.selectedOptions, opt => opt.value)
-                        )}
-                        className="student-multi-select"
-                      >
-                        {currentChart.students.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
+                    <p className="control-hint">Velg 2 elever som IKKE skal sitte sammen</p>
+                    <div className="student-chips-container">
+                      {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                        const isSelected = newApartPair.includes(s.id);
+                        const isDisabled = !isSelected && newApartPair.length >= 2;
+                        return (
+                          <button
+                            key={s.id}
+                            className={`student-chip ${isSelected ? 'selected-apart' : ''}`}
+                            disabled={isDisabled}
+                            onClick={() => {
+                              if (isDisabled) return;
+                              if (isSelected) {
+                                setNewApartPair(newApartPair.filter(id => id !== s.id));
+                              } else {
+                                setNewApartPair([...newApartPair, s.id]);
+                              }
+                            }}
+                          >
+                            {s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="student-select-actions">
                       <button 
                         className="btn btn-small"
                         onClick={() => {
@@ -779,8 +864,16 @@ function App() {
                           }
                         }}
                       >
-                        Legg til par
+                        Legg til gruppe
                       </button>
+                      {newApartPair.length > 0 && (
+                        <button 
+                          className="btn btn-small btn-clear"
+                          onClick={() => setNewApartPair([])}
+                        >
+                          Nullstill
+                        </button>
+                      )}
                     </div>
                     {keepApart.length > 0 && (
                       <div className="constraint-list">

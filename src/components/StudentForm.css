@@ -128,3 +128,10 @@
   gap: 10px;
   flex-direction: column;
 }
+
+/* Print styles - hide student form */
+@media print {
+  .student-form {
+    display: none !important;
+  }
+}
