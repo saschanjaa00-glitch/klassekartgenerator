@@ -19,6 +19,7 @@ function App() {
 
   // Extra control state
   const [showExtraControls, setShowExtraControls] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [mixGenders, setMixGenders] = useState(false);
   const [placeTogether, setPlaceTogether] = useState<string[][]>([]);
   const [keepApart, setKeepApart] = useState<string[][]>([]);
@@ -678,6 +679,46 @@ function App() {
             <p className="import-export-hint">
               <strong>Importer fra fil:</strong> Hent tilbake lagrede data eller overfør fra en annen nettleser.
             </p>
+            <button 
+              className="btn btn-secondary btn-full"
+              onClick={() => setShowHelp(!showHelp)}
+            >
+              {showHelp ? 'Skjul hjelp' : 'Vis hjelp'}
+            </button>
+            {showHelp && (
+              <div className="help-section">
+                <h4>Hvordan bruke appen</h4>
+                <ul>
+                  <li><strong>Opprett klassekart:</strong> Skriv inn navn og velg antall rader og kolonner, trykk "Nytt klassekart".</li>
+                  <li><strong>Bruk makkerpar:</strong> Aktiver for å sette pulter i par.</li>
+                  <li><strong>Oppdater klassekart:</strong> Oppdater antall rader osv. uten å fjerne alle navn fra listen.</li>
+                  <li><strong>Legg til elever:</strong> Skriv inn navn og trykk Enter for å lage ny linje. Skriv inn ett navn per linje. Trykk "Legg til # elever".</li>
+                  <li><strong>Velg kjønn:</strong> Trykk på symbol for mann / dame. Kan brukes for å blande kjønn (se "Alternativer").</li>
+                  <li><strong>Plasser elever:</strong> Bruk "Automatisk plassering" eller gjør det manuelt med å dra de ned på plass.</li>
+                  <li><strong>Bytt plasser:</strong> Dra en elev over en annen for å bytte plass, makkerpar kan også flyttes ved å dra i symbolet med de 6 prikkene.</li>
+                  <li><strong>Bland plasserte:</strong> Blander alle ulåste elever - prøver å unngå å plassere dem ved siden av samme personer som før.</li>
+                  <li><strong>Lås plassering:</strong> Klikk på hengelåsen for å låse en elev på plass.</li>
+                  <li><strong>Fjern fra plass:</strong> I klassekartet, trykk på X-knappen for å flytte eleven tilbake til "Uplasserte elever"-listen.</li>
+                  <li><strong>Fjern elev:</strong> I "Uplasserte elever"-listen, trykk på X-knappen for å slette eleven.</li>
+                </ul>
+                <h4>Alternativer</h4>
+                <ul>
+                  <li><strong>Bland kjønn:</strong> Huk av for å blande kjønn i klassekartet.</li>
+                  <li><strong>Plasser sammen:</strong> Velg to elever som alltid skal sitte ved siden av hverandre.</li>
+                  <li><strong>Hold fra hverandre:</strong> Velg to elever som IKKE skal sitte ved siden av hverandre.</li>
+                  <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
+                  <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
+                </ul>
+                <h4>Personvern (GDPR)</h4>
+                <ul>
+                  <li>Alle data lagres lokalt i nettleseren din (localStorage).</li>
+                  <li>Ingen data sendes til noen server eller tredjepart.</li>
+                  <li>Du kan når som helst slette alle data ved å tømme nettleserdata eller bruke "Fjern alle elever".</li>
+                  <li>Bruk "Eksporter til fil" for å ta sikkerhetskopi av dataene dine.</li>
+                </ul>
+                <p className="credits">Laget av Sascha Njaa Tjelta</p>
+              </div>
+            )}
           </div>
         </aside>
 
