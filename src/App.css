@@ -140,6 +140,7 @@
 .chart-buttons {
   display: flex;
   gap: 8px;
+  margin-top: 16px;
 }
 
 .chart-buttons .btn {

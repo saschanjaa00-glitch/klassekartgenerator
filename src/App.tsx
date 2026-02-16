@@ -18,6 +18,7 @@ function App() {
   const [pairedSeating, setPairedSeating] = useState(true);
   const [useCustomLayout, setUseCustomLayout] = useState(false);
   const [customLayoutText, setCustomLayoutText] = useState('');
+  const [savedPairedSeating, setSavedPairedSeating] = useState(true);
 
   // Extra control state
   const [showExtraControls, setShowExtraControls] = useState(false);
@@ -752,11 +753,14 @@ function App() {
                   const enabled = e.target.checked;
                   setUseCustomLayout(enabled);
                   if (enabled) {
+                    setSavedPairedSeating(pairedSeating);
                     setPairedSeating(false);
+                  } else {
+                    setPairedSeating(savedPairedSeating);
                   }
                 }}
               />
-              Tilpasset radoppsett
+              Tilpasset oppsett
             </label>
             {useCustomLayout && (
               <div className="custom-layout">
@@ -771,7 +775,8 @@ function App() {
                   rows={4}
                 />
                 <p className="layout-hint">
-                  En linje per rad. Bruk mellomrom eller bindestrek mellom gruppene.
+                  En linje per rad.<br />
+                  Bruk mellomrom eller bindestrek mellom gruppene.
                 </p>
               </div>
             )}
@@ -863,7 +868,7 @@ function App() {
                   <li><strong>Bland kjønn:</strong> Huk av for å blande kjønn i klassekartet.</li>
                   <li><strong>Plasser sammen:</strong> Velg to elever som alltid skal sitte ved siden av hverandre.</li>
                   <li><strong>Hold fra hverandre:</strong> Velg to elever som IKKE skal sitte ved siden av hverandre.</li>
-                  <li><strong>Tilpasset radoppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
+                  <li><strong>Tilpasset oppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
                   <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
                   <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
                 </ul>
