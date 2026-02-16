@@ -30,7 +30,6 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const [dragOverGroup, setDragOverGroup] = useState<{ row: number; groupIndex: number } | null>(null);
   const [dragSource, setDragSource] = useState<{ row: number; col: number } | null>(null);
   const [dragSourcePair, setDragSourcePair] = useState<{ row: number; pairIndex: number } | null>(null);
-  const [dragSourceGroup, setDragSourceGroup] = useState<{ row: number; groupIndex: number } | null>(null);
   const hasCustomLayout = !!(chart.customLayout && chart.customLayout.length > 0);
   const usePairs = chart.pairedSeating && !hasCustomLayout;
 
@@ -153,7 +152,6 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const handleGroupDragStart = (row: number, groupIndex: number, size: number) => (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('groupDrag', JSON.stringify({ row, groupIndex, size }));
-    setDragSourceGroup({ row, groupIndex });
 
     const handle = e.currentTarget as HTMLElement;
     const group = handle.parentElement;
@@ -166,7 +164,6 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   };
 
   const handleGroupDragEnd = () => {
-    setDragSourceGroup(null);
     setDragOverGroup(null);
   };
 
@@ -187,7 +184,6 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const handleGroupDrop = (targetRow: number, targetGroupIndex: number, targetSize: number) => (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverGroup(null);
-    setDragSourceGroup(null);
 
     const groupData = e.dataTransfer.getData('groupDrag');
     if (!groupData || !onSwapGroups) return;
@@ -199,7 +195,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     onSwapGroups(sourceRow, sourceGroupIndex, targetRow, targetGroupIndex);
   };
 
-  const getRowLayout = (rowIndex: number) => (hasCustomLayout ? chart.customLayout?.[rowIndex] : null);
+  const getRowLayout = (rowIndex: number) => (hasCustomLayout ? chart.customLayout?.[rowIndex] ?? null : null);
 
   const getRowSeatCount = (rowIndex: number) => {
     const rowLayout = getRowLayout(rowIndex);
