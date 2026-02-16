@@ -363,6 +363,7 @@ function App() {
     
     // Temporarily hide elements we don't want in the PDF
     const lockButtons = container.querySelectorAll('.lock-button');
+    const removeButtons = container.querySelectorAll('.remove-button');
     const pairHandles = container.querySelectorAll('.pair-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
@@ -378,8 +379,11 @@ function App() {
       seatingGrid.style.backgroundColor = 'white';
       seatingGrid.style.boxShadow = 'none';
     }
+
+    container.classList.add('export-mode');
     
     lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    removeButtons.forEach(el => (el as HTMLElement).style.display = 'none');
     pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
     seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
     
@@ -423,7 +427,9 @@ function App() {
       pdf.save(`${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_seating_chart.pdf`);
     } finally {
       // Restore hidden elements and backgrounds
+      container.classList.remove('export-mode');
       lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      removeButtons.forEach(el => (el as HTMLElement).style.display = '');
       pairHandles.forEach(el => (el as HTMLElement).style.display = '');
       seatLabels.forEach(el => (el as HTMLElement).style.display = '');
       gridContainer.style.backgroundColor = originalContainerBg;
@@ -441,6 +447,7 @@ function App() {
     
     // Temporarily hide elements we don't want in the PNG
     const lockButtons = container.querySelectorAll('.lock-button');
+    const removeButtons = container.querySelectorAll('.remove-button');
     const pairHandles = container.querySelectorAll('.pair-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
@@ -456,8 +463,11 @@ function App() {
       seatingGrid.style.backgroundColor = 'white';
       seatingGrid.style.boxShadow = 'none';
     }
+
+    container.classList.add('export-mode');
     
     lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    removeButtons.forEach(el => (el as HTMLElement).style.display = 'none');
     pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
     seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
     
@@ -474,7 +484,9 @@ function App() {
       link.click();
     } finally {
       // Restore hidden elements and backgrounds
+      container.classList.remove('export-mode');
       lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      removeButtons.forEach(el => (el as HTMLElement).style.display = '');
       pairHandles.forEach(el => (el as HTMLElement).style.display = '');
       seatLabels.forEach(el => (el as HTMLElement).style.display = '');
       gridContainer.style.backgroundColor = originalContainerBg;
@@ -492,6 +504,7 @@ function App() {
     
     // Temporarily hide elements we don't want in the print
     const lockButtons = container.querySelectorAll('.lock-button');
+    const removeButtons = container.querySelectorAll('.remove-button');
     const pairHandles = container.querySelectorAll('.pair-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
@@ -507,8 +520,11 @@ function App() {
       seatingGrid.style.backgroundColor = 'white';
       seatingGrid.style.boxShadow = 'none';
     }
+
+    container.classList.add('export-mode');
     
     lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    removeButtons.forEach(el => (el as HTMLElement).style.display = 'none');
     pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
     seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
     
@@ -559,7 +575,9 @@ function App() {
       }
     } finally {
       // Restore hidden elements and backgrounds
+      container.classList.remove('export-mode');
       lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      removeButtons.forEach(el => (el as HTMLElement).style.display = '');
       pairHandles.forEach(el => (el as HTMLElement).style.display = '');
       seatLabels.forEach(el => (el as HTMLElement).style.display = '');
       gridContainer.style.backgroundColor = originalContainerBg;

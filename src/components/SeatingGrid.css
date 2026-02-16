@@ -37,18 +37,23 @@
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: auto;
+  overflow: hidden;
+  --seat-cols: 1;
+  --pair-cols: 1;
+  --seat-gap: clamp(1px, 0.5vw, 6px);
+  --pair-gap: clamp(8px, 2.4vw, 28px);
 }
 
 .seating-row {
-  display: flex;
-  gap: 40px;
-  justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--seat-cols), minmax(0, 1fr));
+  gap: var(--seat-gap);
+  align-items: stretch;
 }
 
 .seating-grid.paired .seating-row {
-  gap: 4px;
+  grid-template-columns: repeat(var(--pair-cols), minmax(0, 1fr));
+  gap: var(--pair-gap);
 }
 
 .seating-grid.paired .seating-cell.pair-end {
@@ -56,13 +61,15 @@
 }
 
 .seat-pair {
-  display: flex;
-  gap: 4px;
-  margin-right: 36px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--seat-gap);
+  margin-right: 0;
   position: relative;
   padding-top: 20px;
   border-radius: 4px;
   transition: background-color 0.2s;
+  width: 100%;
 }
 
 .seat-pair:last-child {
@@ -98,8 +105,11 @@
 
 .seating-cell {
   position: relative;
-  width: 120px;
-  height: 140px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 6 / 7;
+  min-width: 0;
+  min-height: 90px;
   padding: 0;
 }
 
@@ -128,13 +138,17 @@
 }
 
 @media (max-width: 768px) {
+  .seating-grid {
+    --seat-gap: 1px;
+    --pair-gap: 16px;
+  }
+
   .seating-cell {
-    width: 100px;
-    height: 120px;
+    min-height: 80px;
   }
 
   .seating-row {
-    gap: 8px;
+    gap: var(--seat-gap);
   }
 
   .seating-grid {
@@ -174,23 +188,27 @@
   }
 
   .seating-row {
-    flex-wrap: nowrap !important;
+    display: grid;
+    grid-template-columns: repeat(var(--seat-cols), minmax(0, 1fr));
     gap: 8px;
-    justify-content: center;
   }
 
   .seating-grid.paired .seating-row {
+    grid-template-columns: repeat(var(--pair-cols), minmax(0, 1fr));
     gap: 4px;
   }
 
   .seat-pair {
-    margin-right: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-right: 0;
     padding-top: 15px;
   }
 
   .seating-cell {
-    width: 80px;
-    height: 90px;
+    height: auto;
+    aspect-ratio: 6 / 7;
+    min-height: 70px;
     page-break-inside: avoid;
     break-inside: avoid;
   }

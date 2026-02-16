@@ -31,6 +31,10 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
   const handleCellDragStart = (row: number, col: number) => {
     setDragSource({ row, col });
   };
+  const gridStyle = {
+    '--seat-cols': chart.cols,
+    '--pair-cols': Math.ceil(chart.cols / 2)
+  } as React.CSSProperties;
 
   const handleCellDragEnd = () => {
     setDragSource(null);
@@ -214,7 +218,10 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
       <div className="whiteboard">
         <span>TAVLE</span>
       </div>
-      <div className={`seating-grid ${chart.pairedSeating ? 'paired' : ''}`}>
+      <div
+        className={`seating-grid ${chart.pairedSeating ? 'paired' : ''}`}
+        style={gridStyle}
+      >
         {chart.grid.map((row, rowIndex) => (
           <div key={rowIndex} className="seating-row">
             {chart.pairedSeating ? (
