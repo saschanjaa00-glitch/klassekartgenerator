@@ -42,17 +42,24 @@
   --pair-cols: 1;
   --seat-gap: clamp(1px, 0.5vw, 6px);
   --pair-gap: clamp(8px, 2.4vw, 28px);
+  --group-gap: var(--pair-gap);
 }
 
 .seating-row {
   display: grid;
-  grid-template-columns: repeat(var(--seat-cols), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--row-cols, var(--seat-cols)), minmax(0, 1fr));
   gap: var(--seat-gap);
   align-items: stretch;
 }
 
+.seating-grid.custom-layout .seating-row {
+  display: flex;
+  gap: var(--group-gap);
+  justify-content: center;
+}
+
 .seating-grid.paired .seating-row {
-  grid-template-columns: repeat(var(--pair-cols), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--row-pair-cols, var(--pair-cols)), minmax(0, 1fr));
   gap: var(--pair-gap);
 }
 
@@ -113,6 +120,45 @@
   padding: 0;
 }
 
+.seat-group {
+  display: grid;
+  grid-template-columns: repeat(var(--group-cols, 1), minmax(0, 1fr));
+  gap: var(--seat-gap);
+  flex: var(--group-flex, 1) 1 0;
+  min-width: 0;
+  position: relative;
+  padding-top: 20px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.seat-group.group-drag-over {
+  background-color: transparent;
+}
+
+.group-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: grab;
+  font-size: 14px;
+  color: #999;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.group-drag-handle:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.group-drag-handle:active {
+  cursor: grabbing;
+}
+
 .seating-cell.drag-over {
   border-radius: 4px;
 }
@@ -141,6 +187,7 @@
   .seating-grid {
     --seat-gap: 1px;
     --pair-gap: 16px;
+    --group-gap: var(--pair-gap);
   }
 
   .seating-cell {
@@ -189,12 +236,18 @@
 
   .seating-row {
     display: grid;
-    grid-template-columns: repeat(var(--seat-cols), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--row-cols, var(--seat-cols)), minmax(0, 1fr));
     gap: 8px;
   }
 
+  .seating-grid.custom-layout .seating-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
   .seating-grid.paired .seating-row {
-    grid-template-columns: repeat(var(--pair-cols), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--row-pair-cols, var(--pair-cols)), minmax(0, 1fr));
     gap: 4px;
   }
 

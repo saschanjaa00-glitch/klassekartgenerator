@@ -6,20 +6,75 @@ export const seatingUtils = {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   },
 
+  // Parse custom layout text (e.g., "2 3 3 2\n2 3 3 2")
+  parseCustomLayout: (text: string): number[][] | null => {
+    const lines = text
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      return null;
+    }
+
+    const layout = lines.map(line => {
+      const parts = line.split(/[\s-]+/).filter(Boolean);
+      const numbers = parts.map(part => Number.parseInt(part, 10));
+      if (numbers.some(num => Number.isNaN(num) || num <= 0)) {
+        return null;
+      }
+      return numbers;
+    });
+
+    if (layout.some(row => row === null)) {
+      return null;
+    }
+
+    return layout as number[][];
+  },
+
+  // Check if a seat is enabled based on a custom layout (if any)
+  isSeatEnabled: (chart: SeatingChart, row: number, col: number): boolean => {
+    if (!chart.customLayout || chart.customLayout.length === 0) {
+      return true;
+    }
+    const rowLayout = chart.customLayout[row];
+    if (!rowLayout) {
+      return false;
+    }
+    const seatsInRow = rowLayout.reduce((sum, count) => sum + count, 0);
+    return col >= 0 && col < seatsInRow;
+  },
+
   // Create a new seating chart
-  createChart: (name: string, rows: number, cols: number, pairedSeating: boolean = false): SeatingChart => {
-    const grid: (Student | null)[][] = Array(rows)
+  createChart: (
+    name: string,
+    rows: number,
+    cols: number,
+    pairedSeating: boolean = false,
+    customLayout?: number[][]
+  ): SeatingChart => {
+    let actualRows = rows;
+    let actualCols = cols;
+
+    if (customLayout && customLayout.length > 0) {
+      actualRows = customLayout.length;
+      actualCols = Math.max(...customLayout.map(row => row.reduce((sum, group) => sum + group, 0)));
+    }
+
+    const grid: (Student | null)[][] = Array(actualRows)
       .fill(null)
-      .map(() => Array(cols).fill(null));
+      .map(() => Array(actualCols).fill(null));
 
     return {
       id: seatingUtils.generateId(),
       name,
       students: [],
       grid,
-      rows,
-      cols,
+      rows: actualRows,
+      cols: actualCols,
       pairedSeating,
+      customLayout,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -60,6 +115,10 @@ export const seatingUtils = {
   ): SeatingChart => {
     const student = chart.students.find(s => s.id === studentId);
     if (!student || row < 0 || row >= chart.rows || col < 0 || col >= chart.cols) {
+      return chart;
+    }
+
+    if (!seatingUtils.isSeatEnabled(chart, row, col)) {
       return chart;
     }
 
@@ -123,6 +182,9 @@ export const seatingUtils = {
     const lockedStudentIds = new Set<string>();
     for (let row = 0; row < chart.rows; row++) {
       for (let col = 0; col < chart.cols; col++) {
+        if (!seatingUtils.isSeatEnabled(chart, row, col)) {
+          continue;
+        }
         const student = chart.grid[row][col];
         if (student?.locked) {
           lockedStudentIds.add(student.id);
@@ -149,6 +211,9 @@ export const seatingUtils = {
     const availablePositions: { row: number; col: number }[] = [];
     for (let row = 0; row < chart.rows; row++) {
       for (let col = 0; col < chart.cols; col++) {
+        if (!seatingUtils.isSeatEnabled(chart, row, col)) {
+          continue;
+        }
         if (!updated.grid[row][col]?.locked) {
           availablePositions.push({ row, col });
         }
@@ -182,6 +247,7 @@ export const seatingUtils = {
       return !usedPositions.has(`${row},${col}`) && 
              row >= 0 && row < chart.rows && 
              col >= 0 && col < chart.cols &&
+             seatingUtils.isSeatEnabled(chart, row, col) &&
              !updated.grid[row][col]?.locked;
     };
 
@@ -375,6 +441,9 @@ export const seatingUtils = {
         // Check if it's a locked student in the grid
         for (let row = 0; row < chart.rows; row++) {
           for (let col = 0; col < chart.cols; col++) {
+            if (!seatingUtils.isSeatEnabled(chart, row, col)) {
+              continue;
+            }
             const gridStudent = updated.grid[row][col];
             if (gridStudent?.id === id && gridStudent.locked) {
               groupStudents.push({ student: gridStudent, locked: true, position: { row, col } });
@@ -505,6 +574,9 @@ export const seatingUtils = {
           // Also check locked students in grid
           for (let r = 0; r < chart.rows && isValid; r++) {
             for (let c = 0; c < chart.cols && isValid; c++) {
+              if (!seatingUtils.isSeatEnabled(chart, r, c)) {
+                continue;
+              }
               if (updated.grid[r][c]?.id === apartId && 
                   seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
                 isValid = false;
@@ -549,6 +621,9 @@ export const seatingUtils = {
     row2: number,
     col2: number
   ): SeatingChart => {
+    if (!seatingUtils.isSeatEnabled(chart, row1, col1) || !seatingUtils.isSeatEnabled(chart, row2, col2)) {
+      return chart;
+    }
     const newGrid = chart.grid.map(r => [...r]);
     const temp = newGrid[row1][col1];
     newGrid[row1][col1] = newGrid[row2][col2];
@@ -570,8 +645,11 @@ export const seatingUtils = {
     // Record current neighbors for each student (before shuffling)
     const previousNeighbors = new Map<string, Set<string>>();
     
-    for (let row = 0; row < chart.rows; row++) {
-      for (let col = 0; col < chart.cols; col++) {
+        for (let row = 0; row < chart.rows; row++) {
+          for (let col = 0; col < chart.cols; col++) {
+            if (!seatingUtils.isSeatEnabled(chart, row, col)) {
+              continue;
+            }
         const student = chart.grid[row][col];
         if (student) {
           // Find all adjacent students
@@ -580,7 +658,7 @@ export const seatingUtils = {
           for (const [dr, dc] of adjacentOffsets) {
             const nr = row + dr;
             const nc = col + dc;
-            if (nr >= 0 && nr < chart.rows && nc >= 0 && nc < chart.cols) {
+            if (nr >= 0 && nr < chart.rows && nc >= 0 && nc < chart.cols && seatingUtils.isSeatEnabled(chart, nr, nc)) {
               const neighbor = chart.grid[nr][nc];
               if (neighbor) {
                 neighbors.add(neighbor.id);
@@ -638,7 +716,7 @@ export const seatingUtils = {
               }
             }
             // Check locked students in grid
-            if (!hasPreviousNeighbor && nr >= 0 && nr < chart.rows && nc >= 0 && nc < chart.cols) {
+            if (!hasPreviousNeighbor && nr >= 0 && nr < chart.rows && nc >= 0 && nc < chart.cols && seatingUtils.isSeatEnabled(chart, nr, nc)) {
               const locked = chart.grid[nr][nc];
               if (locked?.locked && prevNeighbors.has(locked.id)) {
                 hasPreviousNeighbor = true;
@@ -950,6 +1028,9 @@ export const seatingUtils = {
           // Also check locked students in grid
           for (let r = 0; r < chart.rows && isValid; r++) {
             for (let c = 0; c < chart.cols && isValid; c++) {
+              if (!seatingUtils.isSeatEnabled(chart, r, c)) {
+                continue;
+              }
               if (chart.grid[r][c]?.id === apartId && chart.grid[r][c]?.locked &&
                   seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
                 isValid = false;
@@ -969,6 +1050,9 @@ export const seatingUtils = {
             // Also check locked students in grid
             for (let r = 0; r < chart.rows && isValid; r++) {
               for (let c = 0; c < chart.cols && isValid; c++) {
+                if (!seatingUtils.isSeatEnabled(chart, r, c)) {
+                  continue;
+                }
                 if (chart.grid[r][c]?.id === prevNeighborId && chart.grid[r][c]?.locked &&
                     seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
                   isValid = false;

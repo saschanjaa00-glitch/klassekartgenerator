@@ -16,6 +16,8 @@ function App() {
   const [gridSize, setGridSize] = useState({ rows: 5, cols: 6 });
   const [chartName, setChartName] = useState('');
   const [pairedSeating, setPairedSeating] = useState(true);
+  const [useCustomLayout, setUseCustomLayout] = useState(false);
+  const [customLayoutText, setCustomLayoutText] = useState('');
 
   // Extra control state
   const [showExtraControls, setShowExtraControls] = useState(false);
@@ -50,6 +52,13 @@ function App() {
     if (chart) {
       setGridSize({ rows: chart.rows, cols: chart.cols });
       setPairedSeating(chart.pairedSeating || false);
+      if (chart.customLayout && chart.customLayout.length > 0) {
+        setUseCustomLayout(true);
+        setCustomLayoutText(chart.customLayout.map(row => row.join(' ')).join('\n'));
+      } else {
+        setUseCustomLayout(false);
+        setCustomLayoutText('');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChartId]);
@@ -63,12 +72,34 @@ function App() {
       return;
     }
 
-    const newChart = seatingUtils.createChart(chartName, gridSize.rows, gridSize.cols, pairedSeating);
+    let customLayout: number[][] | undefined;
+    let effectivePairedSeating = pairedSeating;
+    if (useCustomLayout) {
+      if (!customLayoutText.trim()) {
+        alert('Skriv inn et tilpasset oppsett før du lager et kart');
+        return;
+      }
+      const parsed = seatingUtils.parseCustomLayout(customLayoutText);
+      if (!parsed) {
+        alert('Ugyldig oppsett. Bruk tall separert med mellomrom eller bindestrek.');
+        return;
+      }
+      customLayout = parsed;
+      effectivePairedSeating = false;
+    }
+
+    const newChart = seatingUtils.createChart(
+      chartName,
+      gridSize.rows,
+      gridSize.cols,
+      effectivePairedSeating,
+      customLayout
+    );
     const updatedCharts = [...charts, newChart];
     setCharts(updatedCharts);
     setCurrentChartId(newChart.id);
     setChartName('');
-    setPairedSeating(true);
+    setPairedSeating(useCustomLayout ? false : true);
   };
 
   const handleDeleteChart = (chartId: string) => {
@@ -145,19 +176,51 @@ function App() {
       alert('Velg et kart å oppdatere');
       return;
     }
-    
-    const newRows = gridSize.rows;
-    const newCols = gridSize.cols;
+
+    let newRows = gridSize.rows;
+    let newCols = gridSize.cols;
+    let customLayout: number[][] | undefined;
+    let effectivePairedSeating = pairedSeating;
+
+    if (useCustomLayout) {
+      if (!customLayoutText.trim()) {
+        alert('Skriv inn et tilpasset oppsett før du oppdaterer kartet');
+        return;
+      }
+      const parsed = seatingUtils.parseCustomLayout(customLayoutText);
+      if (!parsed) {
+        alert('Ugyldig oppsett. Bruk tall separert med mellomrom eller bindestrek.');
+        return;
+      }
+      customLayout = parsed;
+      newRows = parsed.length;
+      newCols = Math.max(...parsed.map(row => row.reduce((sum, group) => sum + group, 0)));
+      effectivePairedSeating = false;
+    }
     
     // Create new grid with new dimensions
     const newGrid: (Student | null)[][] = Array.from({ length: newRows }, () =>
       Array.from({ length: newCols }, () => null)
     );
+
+    const isSeatEnabled = (row: number, col: number) => {
+      if (!customLayout) {
+        return true;
+      }
+      const rowLayout = customLayout[row];
+      if (!rowLayout) {
+        return false;
+      }
+      const seatsInRow = rowLayout.reduce((sum, count) => sum + count, 0);
+      return col >= 0 && col < seatsInRow;
+    };
     
     // Copy over students that fit in the new grid
     for (let r = 0; r < Math.min(currentChart.rows, newRows); r++) {
       for (let c = 0; c < Math.min(currentChart.cols, newCols); c++) {
-        newGrid[r][c] = currentChart.grid[r][c];
+        if (isSeatEnabled(r, c)) {
+          newGrid[r][c] = currentChart.grid[r][c];
+        }
       }
     }
     
@@ -166,7 +229,8 @@ function App() {
       rows: newRows,
       cols: newCols,
       grid: newGrid,
-      pairedSeating: pairedSeating,
+      pairedSeating: effectivePairedSeating,
+      customLayout: customLayout,
       updatedAt: new Date().toISOString()
     };
     
@@ -222,6 +286,47 @@ function App() {
     newGrid[row2][col2] = source1;
     if (col2 + 1 < currentChart.cols) newGrid[row2][col2 + 1] = source2;
     
+    const updatedChart = {
+      ...currentChart,
+      grid: newGrid,
+      updatedAt: new Date().toISOString()
+    };
+    setCharts(charts.map(c => c.id === currentChart.id ? updatedChart : c));
+  };
+
+  const handleSwapGroups = (row1: number, groupIndex1: number, row2: number, groupIndex2: number) => {
+    if (!currentChart || !currentChart.customLayout) return;
+
+    const getGroupInfo = (rowLayout: number[] | undefined, index: number) => {
+      if (!rowLayout || rowLayout.length === 0) return null;
+      let startCol = 0;
+      for (let i = 0; i < rowLayout.length; i++) {
+        const size = rowLayout[i];
+        if (i === index) {
+          return { startCol, size };
+        }
+        startCol += size;
+      }
+      return null;
+    };
+
+    const rowLayout1 = currentChart.customLayout[row1];
+    const rowLayout2 = currentChart.customLayout[row2];
+    const group1 = getGroupInfo(rowLayout1, groupIndex1);
+    const group2 = getGroupInfo(rowLayout2, groupIndex2);
+
+    if (!group1 || !group2) return;
+    if (group1.size !== group2.size) return;
+
+    const newGrid = currentChart.grid.map(r => [...r]);
+    for (let i = 0; i < group1.size; i++) {
+      const col1 = group1.startCol + i;
+      const col2 = group2.startCol + i;
+      const temp = newGrid[row1][col1];
+      newGrid[row1][col1] = newGrid[row2][col2];
+      newGrid[row2][col2] = temp;
+    }
+
     const updatedChart = {
       ...currentChart,
       grid: newGrid,
@@ -614,6 +719,7 @@ function App() {
                   min="1"
                   max="10"
                   value={gridSize.rows}
+                  disabled={useCustomLayout}
                   onChange={(e) => setGridSize({...gridSize, rows: parseInt(e.target.value) || 1})}
                 />
               </div>
@@ -624,6 +730,7 @@ function App() {
                   min="1"
                   max="10"
                   value={gridSize.cols}
+                  disabled={useCustomLayout}
                   onChange={(e) => setGridSize({...gridSize, cols: parseInt(e.target.value) || 1})}
                 />
               </div>
@@ -632,10 +739,42 @@ function App() {
               <input
                 type="checkbox"
                 checked={pairedSeating}
+                disabled={useCustomLayout}
                 onChange={(e) => setPairedSeating(e.target.checked)}
               />
               Bruk Makkerpar
             </label>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={useCustomLayout}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setUseCustomLayout(enabled);
+                  if (enabled) {
+                    setPairedSeating(false);
+                  }
+                }}
+              />
+              Tilpasset radoppsett
+            </label>
+            {useCustomLayout && (
+              <div className="custom-layout">
+                <textarea
+                  className="layout-textarea"
+                  placeholder={`eks.
+2 3 3 2
+2 3 3 2
+2 3 3 2`}
+                  value={customLayoutText}
+                  onChange={(e) => setCustomLayoutText(e.target.value)}
+                  rows={4}
+                />
+                <p className="layout-hint">
+                  En linje per rad. Bruk mellomrom eller bindestrek mellom gruppene.
+                </p>
+              </div>
+            )}
             <div className="chart-buttons">
               <button className="btn btn-primary" onClick={handleCreateChart}>
                 Nytt klassekart
@@ -724,6 +863,7 @@ function App() {
                   <li><strong>Bland kjønn:</strong> Huk av for å blande kjønn i klassekartet.</li>
                   <li><strong>Plasser sammen:</strong> Velg to elever som alltid skal sitte ved siden av hverandre.</li>
                   <li><strong>Hold fra hverandre:</strong> Velg to elever som IKKE skal sitte ved siden av hverandre.</li>
+                  <li><strong>Tilpasset radoppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
                   <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
                   <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
                 </ul>
@@ -964,6 +1104,7 @@ function App() {
                 onRemoveStudent={handleRemoveFromSeat}
                 onSwapStudents={handleSwapStudents}
                 onSwapPairs={handleSwapPairs}
+                onSwapGroups={handleSwapGroups}
                 onToggleLock={handleToggleLock}
               />
             </>

@@ -1,6 +1,6 @@
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #d7e5f0 0%, #c5c8c7 100%);
+  background: linear-gradient(135deg, #eef2f5 0%, #e1e3e2 100%);
   display: flex;
   flex-direction: column;
 }
@@ -72,6 +72,12 @@
   font-family: inherit;
 }
 
+.size-input input:disabled {
+  background-color: #f1f1f1;
+  color: #888;
+  cursor: not-allowed;
+}
+
 .chart-creation input[type="text"]:focus,
 .size-input input:focus {
   outline: none;
@@ -100,6 +106,35 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+
+.custom-layout {
+  margin-top: 8px;
+}
+
+.layout-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.layout-textarea:focus {
+  outline: none;
+  border-color: #73787c;
+  box-shadow: 0 0 0 3px rgba(115, 120, 124, 0.1);
+}
+
+.layout-hint {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
 }
 
 .chart-buttons {

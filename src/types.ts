@@ -19,6 +19,7 @@ export interface SeatingChart {
   rows: number;
   cols: number;
   pairedSeating?: boolean;
+  customLayout?: number[][]; // Groups per row, e.g. [[2,3,3,2], [2,3,3,2]]
   createdAt: string;
   updatedAt: string;
 }
