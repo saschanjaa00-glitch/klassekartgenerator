@@ -25,6 +25,8 @@ function App() {
   const [showExtraControls, setShowExtraControls] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [mixGenders, setMixGenders] = useState(false);
+  const [showPlaceTogether, setShowPlaceTogether] = useState(false);
+  const [showKeepApart, setShowKeepApart] = useState(false);
   const [placeTogether, setPlaceTogether] = useState<string[][]>([]);
   const [keepApart, setKeepApart] = useState<string[][]>([]);
   const [newTogetherGroup, setNewTogetherGroup] = useState<string[]>([]);
@@ -912,16 +914,10 @@ function App() {
                   Fjern alle elever
                 </button>
                 <button 
-                  className={`btn btn-toggle ${showGenderColors ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setShowGenderColors(!showGenderColors)}
-                >
-                  {showGenderColors ? 'Skjul kjønnsfarger' : 'Vis kjønnsfarger'}
-                </button>
-                <button 
                   className={`btn btn-toggle ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setShowExtraControls(!showExtraControls)}
                 >
-                  {showExtraControls ? 'Skjul' : 'Alternativer'}
+                  Alternativer
                 </button>
                 <button className="btn btn-secondary" onClick={handleGeneratePDF}>
                   Lagre PDF
@@ -936,11 +932,182 @@ function App() {
 
               {showExtraControls && (
                 <div className="extra-controls">
-                  <h3>Plasseringsalternativer</h3>
+                  <h3>Alternativer</h3>
+                  
+                  <div className="control-section alternatives-toggles">
+                    <div className="alternative-item">
+                      <label className="toggle-label">
+                        <input
+                          type="checkbox"
+                          checked={showGenderColors}
+                          onChange={(e) => setShowGenderColors(e.target.checked)}
+                        />
+                        Vis farge for gutt/jente (kun i forhåndsvisning)
+                      </label>
+                    </div>
+                    
+                    <div className="alternative-item">
+                      <label className="toggle-label">
+                        <input
+                          type="checkbox"
+                          checked={mixGenders}
+                          onChange={(e) => setMixGenders(e.target.checked)}
+                        />
+                        Bland gutter og jenter
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="control-section constraint-columns-grid">
+                    <div className="constraint-column">
+                      <div className="constraint-content">
+                        <h4>Plasser sammen</h4>
+                        <p className="control-hint">Velg 2 elever som skal sitte sammen</p>
+                        <div className="student-chips-container">
+                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                            const isInRule = placeTogether.some(group => group.includes(s.id));
+                            const isSelected = newTogetherGroup.includes(s.id);
+                            const isDisabled = isInRule || (!isSelected && newTogetherGroup.length >= 2);
+                            return (
+                              <button
+                                key={s.id}
+                                className={`student-chip ${isSelected ? 'selected' : ''} ${isInRule ? 'disabled-rule' : ''}`}
+                                disabled={isDisabled}
+                                onClick={() => {
+                                  if (isDisabled) return;
+                                  if (isSelected) {
+                                    setNewTogetherGroup(newTogetherGroup.filter(id => id !== s.id));
+                                  } else {
+                                    setNewTogetherGroup([...newTogetherGroup, s.id]);
+                                  }
+                                }}
+                              >
+                                {s.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="student-select-actions">
+                          <button 
+                            className="btn btn-small"
+                            onClick={() => {
+                              if (newTogetherGroup.length >= 2) {
+                                setPlaceTogether([...placeTogether, newTogetherGroup]);
+                                setNewTogetherGroup([]);
+                              } else {
+                                alert('Velg minst 2 elever');
+                              }
+                            }}
+                          >
+                            Legg til gruppe
+                          </button>
+                          {newTogetherGroup.length > 0 && (
+                            <button 
+                              className="btn btn-small btn-clear"
+                              onClick={() => setNewTogetherGroup([])}
+                            >
+                              Nullstill
+                            </button>
+                          )}
+                        </div>
+                        {placeTogether.length > 0 && (
+                          <div className="constraint-list">
+                            {placeTogether.map((group, idx) => (
+                              <div key={idx} className="constraint-item">
+                                <span>
+                                  {group.map(id => 
+                                    currentChart.students.find(s => s.id === id)?.name
+                                  ).join(' + ')}
+                                </span>
+                                <button 
+                                  className="btn-remove"
+                                  onClick={() => setPlaceTogether(placeTogether.filter((_, i) => i !== idx))}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="constraint-column">
+                      <div className="constraint-content">
+                        <h4>Hold fra hverandre</h4>
+                        <p className="control-hint">Velg 2 elever som IKKE skal sitte sammen</p>
+                        <div className="student-chips-container">
+                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                            const isSelected = newApartPair.includes(s.id);
+                            const isDisabled = !isSelected && newApartPair.length >= 2;
+                            return (
+                              <button
+                                key={s.id}
+                                className={`student-chip ${isSelected ? 'selected-apart' : ''}`}
+                                disabled={isDisabled}
+                                onClick={() => {
+                                  if (isDisabled) return;
+                                  if (isSelected) {
+                                    setNewApartPair(newApartPair.filter(id => id !== s.id));
+                                  } else {
+                                    setNewApartPair([...newApartPair, s.id]);
+                                  }
+                                }}
+                              >
+                                {s.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="student-select-actions">
+                          <button 
+                            className="btn btn-small"
+                            onClick={() => {
+                              if (newApartPair.length >= 2) {
+                                setKeepApart([...keepApart, newApartPair]);
+                                setNewApartPair([]);
+                              } else {
+                                alert('Velg minst 2 elever');
+                              }
+                            }}
+                          >
+                            Legg til gruppe
+                          </button>
+                          {newApartPair.length > 0 && (
+                            <button 
+                              className="btn btn-small btn-clear"
+                              onClick={() => setNewApartPair([])}
+                            >
+                              Nullstill
+                            </button>
+                          )}
+                        </div>
+                        {keepApart.length > 0 && (
+                          <div className="constraint-list">
+                            {keepApart.map((pair, idx) => (
+                              <div key={idx} className="constraint-item apart">
+                                <span>
+                                  {pair.map(id => 
+                                    currentChart.students.find(s => s.id === id)?.name
+                                  ).join(' ≠ ')}
+                                </span>
+                                <button 
+                                  className="btn-remove"
+                                  onClick={() => setKeepApart(keepApart.filter((_, i) => i !== idx))}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="control-section">
                     <button 
-                      className="btn btn-secondary btn-full"
+                      className="btn btn-secondary btn-constraint"
                       onClick={() => {
                         const randomStudents = generateRandomNamesWithGender(30);
                         const students: Student[] = randomStudents.map(s => ({
@@ -953,158 +1120,6 @@ function App() {
                     >
                       Generer 30 tilfeldige navn
                     </button>
-                  </div>
-                  
-                  <div className="control-section">
-                    <label className="toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={mixGenders}
-                        onChange={(e) => setMixGenders(e.target.checked)}
-                      />
-                      Bland kjønn (veksle mellom gutter og jenter)
-                    </label>
-                  </div>
-
-                  <div className="control-section">
-                    <h4>Plasser sammen</h4>
-                    <p className="control-hint">Velg 2 elever som skal sitte sammen</p>
-                    <div className="student-chips-container">
-                      {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
-                        const isInRule = placeTogether.some(group => group.includes(s.id));
-                        const isSelected = newTogetherGroup.includes(s.id);
-                        const isDisabled = isInRule || (!isSelected && newTogetherGroup.length >= 2);
-                        return (
-                          <button
-                            key={s.id}
-                            className={`student-chip ${isSelected ? 'selected' : ''} ${isInRule ? 'disabled-rule' : ''}`}
-                            disabled={isDisabled}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              if (isSelected) {
-                                setNewTogetherGroup(newTogetherGroup.filter(id => id !== s.id));
-                              } else {
-                                setNewTogetherGroup([...newTogetherGroup, s.id]);
-                              }
-                            }}
-                          >
-                            {s.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="student-select-actions">
-                      <button 
-                        className="btn btn-small"
-                        onClick={() => {
-                          if (newTogetherGroup.length >= 2) {
-                            setPlaceTogether([...placeTogether, newTogetherGroup]);
-                            setNewTogetherGroup([]);
-                          } else {
-                            alert('Velg minst 2 elever');
-                          }
-                        }}
-                      >
-                        Legg til gruppe
-                      </button>
-                      {newTogetherGroup.length > 0 && (
-                        <button 
-                          className="btn btn-small btn-clear"
-                          onClick={() => setNewTogetherGroup([])}
-                        >
-                          Nullstill
-                        </button>
-                      )}
-                    </div>
-                    {placeTogether.length > 0 && (
-                      <div className="constraint-list">
-                        {placeTogether.map((group, idx) => (
-                          <div key={idx} className="constraint-item">
-                            <span>
-                              {group.map(id => 
-                                currentChart.students.find(s => s.id === id)?.name
-                              ).join(' + ')}
-                            </span>
-                            <button 
-                              className="btn-remove"
-                              onClick={() => setPlaceTogether(placeTogether.filter((_, i) => i !== idx))}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="control-section">
-                    <h4>Hold fra hverandre</h4>
-                    <p className="control-hint">Velg 2 elever som IKKE skal sitte sammen</p>
-                    <div className="student-chips-container">
-                      {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
-                        const isSelected = newApartPair.includes(s.id);
-                        const isDisabled = !isSelected && newApartPair.length >= 2;
-                        return (
-                          <button
-                            key={s.id}
-                            className={`student-chip ${isSelected ? 'selected-apart' : ''}`}
-                            disabled={isDisabled}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              if (isSelected) {
-                                setNewApartPair(newApartPair.filter(id => id !== s.id));
-                              } else {
-                                setNewApartPair([...newApartPair, s.id]);
-                              }
-                            }}
-                          >
-                            {s.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="student-select-actions">
-                      <button 
-                        className="btn btn-small"
-                        onClick={() => {
-                          if (newApartPair.length >= 2) {
-                            setKeepApart([...keepApart, newApartPair]);
-                            setNewApartPair([]);
-                          } else {
-                            alert('Velg minst 2 elever');
-                          }
-                        }}
-                      >
-                        Legg til gruppe
-                      </button>
-                      {newApartPair.length > 0 && (
-                        <button 
-                          className="btn btn-small btn-clear"
-                          onClick={() => setNewApartPair([])}
-                        >
-                          Nullstill
-                        </button>
-                      )}
-                    </div>
-                    {keepApart.length > 0 && (
-                      <div className="constraint-list">
-                        {keepApart.map((pair, idx) => (
-                          <div key={idx} className="constraint-item apart">
-                            <span>
-                              {pair.map(id => 
-                                currentChart.students.find(s => s.id === id)?.name
-                              ).join(' ≠ ')}
-                            </span>
-                            <button 
-                              className="btn-remove"
-                              onClick={() => setKeepApart(keepApart.filter((_, i) => i !== idx))}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
