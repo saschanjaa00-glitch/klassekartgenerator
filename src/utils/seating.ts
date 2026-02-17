@@ -550,7 +550,7 @@ export const seatingUtils = {
           positionsByRow.get(pos.row)!.push(pos);
         }
         
-        for (const [row, positions] of positionsByRow) {
+        for (const [_, positions] of positionsByRow) {
           positions.sort((a, b) => a.col - b.col);
           for (let i = 0; i < positions.length; i += 2) {
             const pair = [positions[i]];
@@ -1107,7 +1107,7 @@ export const seatingUtils = {
           positionsByRow.get(pos.row)!.push(pos);
         }
         
-        for (const [row, positions] of positionsByRow) {
+        for (const [_, positions] of positionsByRow) {
           positions.sort((a, b) => a.col - b.col);
           for (let i = 0; i < positions.length; i += 2) {
             const pair = [positions[i]];
