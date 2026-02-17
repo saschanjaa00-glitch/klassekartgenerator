@@ -115,6 +115,21 @@ function App() {
     }
   };
 
+  const handleRenameChart = (chartId: string) => {
+    const chart = charts.find(c => c.id === chartId);
+    if (!chart) return;
+    
+    const newName = window.prompt('Nytt navn for kartet:', chart.name);
+    if (newName && newName.trim()) {
+      const updated = charts.map(c =>
+        c.id === chartId ? { ...c, name: newName.trim() } : c
+      );
+      setCharts(updated);
+      storageUtils.deleteChart(chartId);
+      storageUtils.saveChart({ ...chart, name: newName.trim() });
+    }
+  };
+
   const handleExportCharts = () => {
     if (charts.length === 0) {
       alert('Ingen kart å eksportere');
@@ -883,6 +898,13 @@ function App() {
                       onClick={() => setCurrentChartId(chart.id)}
                     >
                       {chart.name}
+                    </button>
+                    <button
+                      className="btn-rename"
+                      onClick={() => handleRenameChart(chart.id)}
+                      title="Endre navn"
+                    >
+                      ✏️
                     </button>
                     <button
                       className="btn-delete"
