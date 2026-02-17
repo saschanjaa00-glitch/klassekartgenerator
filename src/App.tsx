@@ -25,8 +25,6 @@ function App() {
   const [showExtraControls, setShowExtraControls] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [mixGenders, setMixGenders] = useState(false);
-  const [showPlaceTogether, setShowPlaceTogether] = useState(false);
-  const [showKeepApart, setShowKeepApart] = useState(false);
   const [placeTogether, setPlaceTogether] = useState<string[][]>([]);
   const [keepApart, setKeepApart] = useState<string[][]>([]);
   const [newTogetherGroup, setNewTogetherGroup] = useState<string[]>([]);
