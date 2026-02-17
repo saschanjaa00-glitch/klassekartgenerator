@@ -17,6 +17,7 @@ export const StudentList: React.FC<StudentListProps> = ({
   onDropFromGrid
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleGenderChange = (student: Student, newGender: 'male' | 'female') => {
     if (onUpdateStudent) {
@@ -63,37 +64,48 @@ export const StudentList: React.FC<StudentListProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <h3>Uplasserte elever ({students.length})</h3>
-      <div className="student-list-grid">
-        {sortedStudents.map((student) => (
-          <div key={student.id} className="student-list-item">
-            <StudentCard student={student} draggable={true} />
-            <div className="gender-toggle">
+      <div className="student-list-header">
+        <h3>Uplasserte elever ({students.length})</h3>
+        <button 
+          className="btn-collapse"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'Vis elever' : 'Skjul elever'}
+        >
+          {isCollapsed ? '▶' : '▼'}
+        </button>
+      </div>
+      {!isCollapsed && (
+        <div className="student-list-grid">
+          {sortedStudents.map((student) => (
+            <div key={student.id} className="student-list-item">
+              <StudentCard student={student} draggable={true} />
+              <div className="gender-toggle">
+                <button
+                  className={`gender-icon male ${student.gender === 'male' ? 'selected' : ''}`}
+                  onClick={() => handleGenderChange(student, 'male')}
+                  title="Gutt"
+                >
+                  ♂
+                </button>
+                <button
+                  className={`gender-icon female ${student.gender === 'female' ? 'selected' : ''}`}
+                  onClick={() => handleGenderChange(student, 'female')}
+                  title="Jente"
+                >
+                  ♀
+                </button>
+              </div>
               <button
-                className={`gender-icon male ${student.gender === 'male' ? 'selected' : ''}`}
-                onClick={() => handleGenderChange(student, 'male')}
-                title="Gutt"
+                className="btn-remove-student"
+                onClick={() => onRemoveStudent(student.id)}
+                title="Fjern elev"
               >
-                ♂
-              </button>
-              <button
-                className={`gender-icon female ${student.gender === 'female' ? 'selected' : ''}`}
-                onClick={() => handleGenderChange(student, 'female')}
-                title="Jente"
-              >
-                ♀
+                ×
               </button>
             </div>
-            <button
-              className="btn-remove-student"
-              onClick={() => onRemoveStudent(student.id)}
-              title="Fjern elev"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
