@@ -527,79 +527,188 @@ export const seatingUtils = {
     // Remove already placed students from the list
     const remainingStudents = studentsToPlace.filter(s => !placement.has(s.id));
     
-    // Shuffle remaining students
-    for (let i = remainingStudents.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [remainingStudents[i], remainingStudents[j]] = [remainingStudents[j], remainingStudents[i]];
-    }
-
-    // Sort by gender if mixing is enabled (alternating pattern)
-    if (constraints.mixGenders) {
+    // Get remaining positions
+    const remainingPositions = availablePositions.filter(p => !usedPositions.has(`${p.row},${p.col}`));
+    
+    // If mixing genders, organize students and positions to maximize gender diversity
+    if (constraints.mixGenders && remainingStudents.length > 0 && remainingPositions.length > 0) {
       const males = remainingStudents.filter(s => s.gender === 'male');
       const females = remainingStudents.filter(s => s.gender === 'female');
       const others = remainingStudents.filter(s => s.gender === 'other');
       
-      remainingStudents.length = 0;
-      let m = 0, f = 0, o = 0;
-      while (m < males.length || f < females.length || o < others.length) {
-        if (m < males.length) remainingStudents.push(males[m++]);
-        if (f < females.length) remainingStudents.push(females[f++]);
-        if (o < others.length) remainingStudents.push(others[o++]);
-      }
-    }
-
-    // Place remaining students
-    const remainingPositions = availablePositions.filter(p => !usedPositions.has(`${p.row},${p.col}`));
-    
-    for (const student of remainingStudents) {
-      // Find a valid position (respecting keepApart constraints)
-      const keepApartIds = constraints.keepApart
-        .filter(pair => pair.includes(student.id))
-        .flat()
-        .filter(id => id !== student.id);
-
-      let placed = false;
-      for (let i = 0; i < remainingPositions.length; i++) {
-        const pos = remainingPositions[i];
-        if (usedPositions.has(`${pos.row},${pos.col}`)) continue;
-
-        // Check if any keepApart student is adjacent
-        let isValid = true;
-        for (const apartId of keepApartIds) {
-          const apartPos = placement.get(apartId);
-          if (apartPos && seatingUtils.areAdjacent(pos.row, pos.col, apartPos.row, apartPos.col)) {
-            isValid = false;
-            break;
+      // Group positions based on seating structure
+      const hasCustomLayout = !!(chart.customLayout && chart.customLayout.length > 0);
+      const positionGroups: { row: number; col: number }[][] = [];
+      
+      if (chart.pairedSeating && !hasCustomLayout) {
+        // Group positions into pairs (columns 0-1, 2-3, 4-5, etc.)
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
           }
-          // Also check locked students in grid
-          for (let r = 0; r < chart.rows && isValid; r++) {
-            for (let c = 0; c < chart.cols && isValid; c++) {
-              if (!seatingUtils.isSeatEnabled(chart, r, c)) {
-                continue;
+          positionsByRow.get(pos.row)!.push(pos);
+        }
+        
+        for (const [row, positions] of positionsByRow) {
+          positions.sort((a, b) => a.col - b.col);
+          for (let i = 0; i < positions.length; i += 2) {
+            const pair = [positions[i]];
+            if (i + 1 < positions.length) {
+              pair.push(positions[i + 1]);
+            }
+            positionGroups.push(pair);
+          }
+        }
+      } else if (hasCustomLayout) {
+        // Group positions according to custom layout groups
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
+          }
+          positionsByRow.get(pos.row)!.push(pos);
+        }
+        
+        for (const [row, positions] of positionsByRow) {
+          positions.sort((a, b) => a.col - b.col);
+          const rowLayout = chart.customLayout![row];
+          if (rowLayout) {
+            let colIndex = 0;
+            for (const groupSize of rowLayout) {
+              const group: { row: number; col: number }[] = [];
+              for (let i = 0; i < groupSize && colIndex < positions.length; i++, colIndex++) {
+                group.push(positions[colIndex]);
               }
-              if (updated.grid[r][c]?.id === apartId && 
-                  seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
-                isValid = false;
+              if (group.length > 0) {
+                positionGroups.push(group);
               }
+            }
+          } else {
+            // Fallback: treat each position as its own group
+            for (const pos of positions) {
+              positionGroups.push([pos]);
             }
           }
         }
-
-        if (isValid) {
-          usedPositions.add(`${pos.row},${pos.col}`);
-          placement.set(student.id, pos);
-          placed = true;
-          break;
+      } else {
+        // Regular grid: group by row and adjacent positions
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
+          }
+          positionsByRow.get(pos.row)!.push(pos);
+        }
+        
+        for (const positions of positionsByRow.values()) {
+          positions.sort((a, b) => a.col - b.col);
+          positionGroups.push(positions);
         }
       }
+      
+      // Shuffle position groups to distribute same-sex pairs randomly
+      for (let i = positionGroups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positionGroups[i], positionGroups[j]] = [positionGroups[j], positionGroups[i]];
+      }
+      
+      // Now fill each group/pair with alternating genders
+      let maleIndex = 0, femaleIndex = 0, otherIndex = 0;
+      
+      for (const group of positionGroups) {
+        // Randomize starting gender for each group
+        const startWithMale = Math.random() < 0.5;
+        
+        for (let i = 0; i < group.length; i++) {
+          let student: Student | null = null;
+          
+          // Alternate gender preference within each group
+          const preferMale = (i % 2 === 0) === startWithMale;
+          
+          if (preferMale) {
+            // Prefer male or first available
+            if (maleIndex < males.length) {
+              student = males[maleIndex++];
+            } else if (femaleIndex < females.length) {
+              student = females[femaleIndex++];
+            } else if (otherIndex < others.length) {
+              student = others[otherIndex++];
+            }
+          } else {
+            // Prefer female or first available
+            if (femaleIndex < females.length) {
+              student = females[femaleIndex++];
+            } else if (maleIndex < males.length) {
+              student = males[maleIndex++];
+            } else if (otherIndex < others.length) {
+              student = others[otherIndex++];
+            }
+          }
+          
+          if (student) {
+            usedPositions.add(`${group[i].row},${group[i].col}`);
+            placement.set(student.id, group[i]);
+          }
+        }
+      }
+    } else {
+      // No gender mixing - shuffle and place
+      for (let i = remainingStudents.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remainingStudents[i], remainingStudents[j]] = [remainingStudents[j], remainingStudents[i]];
+      }
+    
+      for (const student of remainingStudents) {
+        // Find a valid position (respecting keepApart constraints)
+        const keepApartIds = constraints.keepApart
+          .filter(pair => pair.includes(student.id))
+          .flat()
+          .filter(id => id !== student.id);
 
-      // If no valid position found, place anywhere available
-      if (!placed) {
-        for (const pos of remainingPositions) {
-          if (!usedPositions.has(`${pos.row},${pos.col}`)) {
+        let placed = false;
+        for (let i = 0; i < remainingPositions.length; i++) {
+          const pos = remainingPositions[i];
+          if (usedPositions.has(`${pos.row},${pos.col}`)) continue;
+
+          // Check if any keepApart student is adjacent
+          let isValid = true;
+          for (const apartId of keepApartIds) {
+            const apartPos = placement.get(apartId);
+            if (apartPos && seatingUtils.areAdjacent(pos.row, pos.col, apartPos.row, apartPos.col)) {
+              isValid = false;
+              break;
+            }
+            // Also check locked students in grid
+            for (let r = 0; r < chart.rows && isValid; r++) {
+              for (let c = 0; c < chart.cols && isValid; c++) {
+                if (!seatingUtils.isSeatEnabled(chart, r, c)) {
+                  continue;
+                }
+                if (updated.grid[r][c]?.id === apartId && 
+                    seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
+                  isValid = false;
+                }
+              }
+            }
+          }
+
+          if (isValid) {
             usedPositions.add(`${pos.row},${pos.col}`);
             placement.set(student.id, pos);
+            placed = true;
             break;
+          }
+        }
+
+        // If no valid position found, place anywhere available
+        if (!placed) {
+          for (const pos of remainingPositions) {
+            if (!usedPositions.has(`${pos.row},${pos.col}`)) {
+              usedPositions.add(`${pos.row},${pos.col}`);
+              placement.set(student.id, pos);
+              break;
+            }
           }
         }
       }
@@ -974,76 +1083,166 @@ export const seatingUtils = {
 
     // Place remaining students
     const remainingStudents = unlockedStudents.filter(s => !placement.has(s.id));
-    for (let i = remainingStudents.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [remainingStudents[i], remainingStudents[j]] = [remainingStudents[j], remainingStudents[i]];
-    }
-
-    if (constraints.mixGenders) {
+    
+    // Get remaining positions
+    const remainingPositions = availablePositions.filter(p => !usedPositions.has(`${p.row},${p.col}`));
+    
+    // If mixing genders, organize students and positions to maximize gender diversity
+    if (constraints.mixGenders && remainingStudents.length > 0 && remainingPositions.length > 0) {
       const males = remainingStudents.filter(s => s.gender === 'male');
       const females = remainingStudents.filter(s => s.gender === 'female');
       const others = remainingStudents.filter(s => s.gender === 'other');
       
-      remainingStudents.length = 0;
-      let m = 0, f = 0, o = 0;
-      while (m < males.length || f < females.length || o < others.length) {
-        if (m < males.length) remainingStudents.push(males[m++]);
-        if (f < females.length) remainingStudents.push(females[f++]);
-        if (o < others.length) remainingStudents.push(others[o++]);
-      }
-    }
-
-    const remainingPositions = availablePositions.filter(p => !usedPositions.has(`${p.row},${p.col}`));
-
-    for (const student of remainingStudents) {
-      const keepApartIds = constraints.keepApart
-        .filter(pair => pair.includes(student.id))
-        .flat()
-        .filter(id => id !== student.id);
+      // Group positions based on seating structure
+      const hasCustomLayout = !!(chart.customLayout && chart.customLayout.length > 0);
+      const positionGroups: { row: number; col: number }[][] = [];
       
-      // Get previous neighbors (unless they're in placeTogether with this student)
-      const prevNeighbors = previousNeighbors.get(student.id) || new Set();
-      const placeTogetherIds = new Set(
-        constraints.placeTogether
-          .filter(group => group.includes(student.id))
-          .flat()
-      );
-      
-      // Previous neighbors we should avoid (not in placeTogether)
-      const avoidPreviousNeighbors = [...prevNeighbors].filter(id => !placeTogetherIds.has(id));
-
-      let placed = false;
-      for (const pos of remainingPositions) {
-        if (usedPositions.has(`${pos.row},${pos.col}`)) continue;
-
-        let isValid = true;
-        
-        // Check keepApart constraints
-        for (const apartId of keepApartIds) {
-          const apartPos = placement.get(apartId);
-          if (apartPos && seatingUtils.areAdjacent(pos.row, pos.col, apartPos.row, apartPos.col)) {
-            isValid = false;
-            break;
+      if (chart.pairedSeating && !hasCustomLayout) {
+        // Group positions into pairs (columns 0-1, 2-3, 4-5, etc.)
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
           }
-          // Also check locked students in grid
-          for (let r = 0; r < chart.rows && isValid; r++) {
-            for (let c = 0; c < chart.cols && isValid; c++) {
-              if (!seatingUtils.isSeatEnabled(chart, r, c)) {
-                continue;
+          positionsByRow.get(pos.row)!.push(pos);
+        }
+        
+        for (const [row, positions] of positionsByRow) {
+          positions.sort((a, b) => a.col - b.col);
+          for (let i = 0; i < positions.length; i += 2) {
+            const pair = [positions[i]];
+            if (i + 1 < positions.length) {
+              pair.push(positions[i + 1]);
+            }
+            positionGroups.push(pair);
+          }
+        }
+      } else if (hasCustomLayout) {
+        // Group positions according to custom layout groups
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
+          }
+          positionsByRow.get(pos.row)!.push(pos);
+        }
+        
+        for (const [row, positions] of positionsByRow) {
+          positions.sort((a, b) => a.col - b.col);
+          const rowLayout = chart.customLayout![row];
+          if (rowLayout) {
+            let colIndex = 0;
+            for (const groupSize of rowLayout) {
+              const group: { row: number; col: number }[] = [];
+              for (let i = 0; i < groupSize && colIndex < positions.length; i++, colIndex++) {
+                group.push(positions[colIndex]);
               }
-              if (chart.grid[r][c]?.id === apartId && chart.grid[r][c]?.locked &&
-                  seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
-                isValid = false;
+              if (group.length > 0) {
+                positionGroups.push(group);
               }
+            }
+          } else {
+            // Fallback: treat each position as its own group
+            for (const pos of positions) {
+              positionGroups.push([pos]);
             }
           }
         }
+      } else {
+        // Regular grid: group by row and adjacent positions
+        const positionsByRow = new Map<number, { row: number; col: number }[]>();
+        for (const pos of remainingPositions) {
+          if (!positionsByRow.has(pos.row)) {
+            positionsByRow.set(pos.row, []);
+          }
+          positionsByRow.get(pos.row)!.push(pos);
+        }
         
-        // Check previous neighbors (avoid sitting next to same people)
-        if (isValid) {
-          for (const prevNeighborId of avoidPreviousNeighbors) {
-            const neighborPos = placement.get(prevNeighborId);
-            if (neighborPos && seatingUtils.areAdjacent(pos.row, pos.col, neighborPos.row, neighborPos.col)) {
+        for (const positions of positionsByRow.values()) {
+          positions.sort((a, b) => a.col - b.col);
+          positionGroups.push(positions);
+        }
+      }
+      
+      // Shuffle position groups to distribute same-sex pairs randomly
+      for (let i = positionGroups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positionGroups[i], positionGroups[j]] = [positionGroups[j], positionGroups[i]];
+      }
+      
+      // Now fill each group/pair with alternating genders
+      let maleIndex = 0, femaleIndex = 0, otherIndex = 0;
+      
+      for (const group of positionGroups) {
+        // Randomize starting gender for each group
+        const startWithMale = Math.random() < 0.5;
+        
+        for (let i = 0; i < group.length; i++) {
+          let student: Student | null = null;
+          
+          // Alternate gender preference within each group
+          const preferMale = (i % 2 === 0) === startWithMale;
+          
+          if (preferMale) {
+            // Prefer male or first available
+            if (maleIndex < males.length) {
+              student = males[maleIndex++];
+            } else if (femaleIndex < females.length) {
+              student = females[femaleIndex++];
+            } else if (otherIndex < others.length) {
+              student = others[otherIndex++];
+            }
+          } else {
+            // Prefer female or first available
+            if (femaleIndex < females.length) {
+              student = females[femaleIndex++];
+            } else if (maleIndex < males.length) {
+              student = males[maleIndex++];
+            } else if (otherIndex < others.length) {
+              student = others[otherIndex++];
+            }
+          }
+          
+          if (student) {
+            usedPositions.add(`${group[i].row},${group[i].col}`);
+            placement.set(student.id, group[i]);
+          }
+        }
+      }
+    } else {
+      // No gender mixing - shuffle and place
+      for (let i = remainingStudents.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remainingStudents[i], remainingStudents[j]] = [remainingStudents[j], remainingStudents[i]];
+      }
+
+      for (const student of remainingStudents) {
+        const keepApartIds = constraints.keepApart
+          .filter(pair => pair.includes(student.id))
+          .flat()
+          .filter(id => id !== student.id);
+        
+        // Get previous neighbors (unless they're in placeTogether with this student)
+        const prevNeighbors = previousNeighbors.get(student.id) || new Set();
+        const placeTogetherIds = new Set(
+          constraints.placeTogether
+            .filter(group => group.includes(student.id))
+            .flat()
+        );
+        
+        // Previous neighbors we should avoid (not in placeTogether)
+        const avoidPreviousNeighbors = [...prevNeighbors].filter(id => !placeTogetherIds.has(id));
+
+        let placed = false;
+        for (const pos of remainingPositions) {
+          if (usedPositions.has(`${pos.row},${pos.col}`)) continue;
+
+          let isValid = true;
+          
+          // Check keepApart constraints
+          for (const apartId of keepApartIds) {
+            const apartPos = placement.get(apartId);
+            if (apartPos && seatingUtils.areAdjacent(pos.row, pos.col, apartPos.row, apartPos.col)) {
               isValid = false;
               break;
             }
@@ -1053,29 +1252,52 @@ export const seatingUtils = {
                 if (!seatingUtils.isSeatEnabled(chart, r, c)) {
                   continue;
                 }
-                if (chart.grid[r][c]?.id === prevNeighborId && chart.grid[r][c]?.locked &&
+                if (chart.grid[r][c]?.id === apartId && chart.grid[r][c]?.locked &&
                     seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
                   isValid = false;
                 }
               }
             }
           }
-        }
+          
+          // Check previous neighbors (avoid sitting next to same people)
+          if (isValid) {
+            for (const prevNeighborId of avoidPreviousNeighbors) {
+              const neighborPos = placement.get(prevNeighborId);
+              if (neighborPos && seatingUtils.areAdjacent(pos.row, pos.col, neighborPos.row, neighborPos.col)) {
+                isValid = false;
+                break;
+              }
+              // Also check locked students in grid
+              for (let r = 0; r < chart.rows && isValid; r++) {
+                for (let c = 0; c < chart.cols && isValid; c++) {
+                  if (!seatingUtils.isSeatEnabled(chart, r, c)) {
+                    continue;
+                  }
+                  if (chart.grid[r][c]?.id === prevNeighborId && chart.grid[r][c]?.locked &&
+                      seatingUtils.areAdjacent(pos.row, pos.col, r, c)) {
+                    isValid = false;
+                  }
+                }
+              }
+            }
+          }
 
-        if (isValid) {
-          usedPositions.add(`${pos.row},${pos.col}`);
-          placement.set(student.id, pos);
-          placed = true;
-          break;
-        }
-      }
-
-      if (!placed) {
-        for (const pos of remainingPositions) {
-          if (!usedPositions.has(`${pos.row},${pos.col}`)) {
+          if (isValid) {
             usedPositions.add(`${pos.row},${pos.col}`);
             placement.set(student.id, pos);
+            placed = true;
             break;
+          }
+        }
+
+        if (!placed) {
+          for (const pos of remainingPositions) {
+            if (!usedPositions.has(`${pos.row},${pos.col}`)) {
+              usedPositions.add(`${pos.row},${pos.col}`);
+              placement.set(student.id, pos);
+              break;
+            }
           }
         }
       }

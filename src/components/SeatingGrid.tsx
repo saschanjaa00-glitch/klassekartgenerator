@@ -11,6 +11,7 @@ interface SeatingGridProps {
   onSwapPairs?: (row1: number, col1: number, row2: number, col2: number) => void;
   onSwapGroups?: (row1: number, groupIndex1: number, row2: number, groupIndex2: number) => void;
   onToggleLock?: (studentId: string) => void;
+  showGenderColors?: boolean;
 }
 
 export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
@@ -21,7 +22,8 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     onSwapStudents,
     onSwapPairs,
     onSwapGroups,
-    onToggleLock
+    onToggleLock,
+    showGenderColors = false
   },
   ref
 ) => {
@@ -285,6 +287,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
           onDragStart={() => handleCellDragStart(rowIndex, colIndex)}
           onDragEnd={handleCellDragEnd}
           isPreview={isPreview}
+          showGenderColors={showGenderColors}
         />
       </div>
     );
@@ -297,7 +300,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
         <span>TAVLE</span>
       </div>
       <div
-        className={`seating-grid ${usePairs ? 'paired' : ''} ${hasCustomLayout ? 'custom-layout' : ''}`}
+        className={`seating-grid ${usePairs ? 'paired' : ''} ${hasCustomLayout ? 'custom-layout' : ''} ${!usePairs && !hasCustomLayout && chart.cols >= 8 ? 'many-cols' : ''}`}
         style={gridStyle}
       >
         {chart.grid.map((row, rowIndex) => {
@@ -341,7 +344,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
                     {pair.col2 !== null && renderCell(row[pair.col2], rowIndex, pair.col2)}
                   </div>
                 ))
-              ) : (
+              ) : hasCustomLayout ? (
                 // Render custom layout groups
                 rowGroups.map((group, groupIndex) => {
                   const groupStyle = {
@@ -376,6 +379,9 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
                     </div>
                   );
                 })
+              ) : (
+                // Render individual seats
+                row.map((student, colIndex) => renderCell(student, rowIndex, colIndex))
               )}
             </div>
           );

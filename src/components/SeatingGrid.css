@@ -32,7 +32,7 @@
 .seating-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: clamp(8px, 2vw, 24px);
   background-color: white;
   padding: 20px;
   border-radius: 8px;
@@ -48,8 +48,12 @@
 .seating-row {
   display: grid;
   grid-template-columns: repeat(var(--row-cols, var(--seat-cols)), minmax(0, 1fr));
-  gap: var(--seat-gap);
+  gap: var(--pair-gap);
   align-items: stretch;
+}
+
+.seating-grid.many-cols .seating-row {
+  gap: clamp(4px, 1.2vw, 14px);
 }
 
 .seating-grid.custom-layout .seating-row {

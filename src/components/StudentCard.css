@@ -162,3 +162,25 @@
     width: 100px;
   }
 }
+
+/* Gender colors - only shown when enabled */
+.student-card.filled.gender-male {
+  background-color: #e3f2fd;
+}
+
+.student-card.filled.gender-female {
+  background-color: #fce4ec;
+}
+
+/* Remove gender colors in export mode and print */
+.export-mode .student-card.filled.gender-male,
+.export-mode .student-card.filled.gender-female {
+  background-color: white;
+}
+
+@media print {
+  .student-card.filled.gender-male,
+  .student-card.filled.gender-female {
+    background-color: white !important;
+  }
+}

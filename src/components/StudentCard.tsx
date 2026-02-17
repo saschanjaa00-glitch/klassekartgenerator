@@ -11,6 +11,7 @@ interface StudentCardProps {
   onDragStart?: () => void;
   onDragEnd?: () => void;
   isPreview?: boolean;
+  showGenderColors?: boolean;
 }
 
 export const StudentCard: React.FC<StudentCardProps> = ({
@@ -21,7 +22,8 @@ export const StudentCard: React.FC<StudentCardProps> = ({
   onRemove,
   onDragStart,
   onDragEnd,
-  isPreview = false
+  isPreview = false,
+  showGenderColors = false
 }) => {
   const handleDragStart = (e: React.DragEvent) => {
     if (student) {
@@ -59,7 +61,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
 
   return (
     <div
-      className={`student-card filled ${student.locked ? 'locked' : ''} ${isPreview ? 'preview' : ''}`}
+      className={`student-card filled ${student.locked ? 'locked' : ''} ${isPreview ? 'preview' : ''} ${showGenderColors ? `gender-${student.gender}` : ''}`}
       onClick={onClick}
       draggable={draggable}
       onDragStart={handleDragStart}

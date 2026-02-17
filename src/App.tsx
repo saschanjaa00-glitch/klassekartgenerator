@@ -19,6 +19,7 @@ function App() {
   const [useCustomLayout, setUseCustomLayout] = useState(false);
   const [customLayoutText, setCustomLayoutText] = useState('');
   const [savedPairedSeating, setSavedPairedSeating] = useState(true);
+  const [showGenderColors, setShowGenderColors] = useState(false);
 
   // Extra control state
   const [showExtraControls, setShowExtraControls] = useState(false);
@@ -911,6 +912,12 @@ function App() {
                   Fjern alle elever
                 </button>
                 <button 
+                  className={`btn btn-toggle ${showGenderColors ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setShowGenderColors(!showGenderColors)}
+                >
+                  {showGenderColors ? 'Skjul kjønnsfarger' : 'Vis kjønnsfarger'}
+                </button>
+                <button 
                   className={`btn btn-toggle ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setShowExtraControls(!showExtraControls)}
                 >
@@ -1111,6 +1118,7 @@ function App() {
                 onSwapPairs={handleSwapPairs}
                 onSwapGroups={handleSwapGroups}
                 onToggleLock={handleToggleLock}
+                showGenderColors={showGenderColors}
               />
             </>
           ) : (
