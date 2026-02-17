@@ -226,6 +226,30 @@
   transform: translateY(-50%) scale(1.1);
 }
 
+.btn-copy {
+  position: absolute;
+  right: 65px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #d0d0d0;
+  color: #666;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-copy:hover {
+  background-color: #b8b8b8;
+  transform: translateY(-50%) scale(1.1);
+}
+
 .btn-delete {
   position: absolute;
   right: 5px;

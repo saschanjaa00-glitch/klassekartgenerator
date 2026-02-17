@@ -130,6 +130,22 @@ function App() {
     }
   };
 
+  const handleCopyChart = (chartId: string) => {
+    const chart = charts.find(c => c.id === chartId);
+    if (!chart) return;
+    
+    const copiedChart: typeof chart = {
+      ...chart,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      name: `${chart.name} (kopi)`,
+      updatedAt: new Date().toISOString()
+    };
+    
+    const updated = [...charts, copiedChart];
+    setCharts(updated);
+    storageUtils.saveChart(copiedChart);
+  };
+
   const handleExportCharts = () => {
     if (charts.length === 0) {
       alert('Ingen kart å eksportere');
@@ -905,6 +921,13 @@ function App() {
                       title="Endre navn"
                     >
                       ✏️
+                    </button>
+                    <button
+                      className="btn-copy"
+                      onClick={() => handleCopyChart(chart.id)}
+                      title="Dupliser"
+                    >
+                      📋
                     </button>
                     <button
                       className="btn-delete"
