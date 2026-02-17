@@ -172,10 +172,21 @@
   background-color: #fce4ec;
 }
 
+/* Hide elements in export mode */
+.export-mode .lock-button {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.export-mode .remove-button {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 /* Remove gender colors in export mode and print */
 .export-mode .student-card.filled.gender-male,
 .export-mode .student-card.filled.gender-female {
-  background-color: white;
+  background-color: white !important;
 }
 
 @media print {

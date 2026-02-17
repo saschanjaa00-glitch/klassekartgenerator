@@ -471,7 +471,7 @@ function App() {
     // Temporarily hide elements we don't want in the PDF
     const lockButtons = container.querySelectorAll('.lock-button');
     const removeButtons = container.querySelectorAll('.remove-button');
-    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle, .group-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
     // Temporarily remove background colors
@@ -555,7 +555,7 @@ function App() {
     // Temporarily hide elements we don't want in the PNG
     const lockButtons = container.querySelectorAll('.lock-button');
     const removeButtons = container.querySelectorAll('.remove-button');
-    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle, .group-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
     // Temporarily remove background colors
@@ -612,7 +612,7 @@ function App() {
     // Temporarily hide elements we don't want in the print
     const lockButtons = container.querySelectorAll('.lock-button');
     const removeButtons = container.querySelectorAll('.remove-button');
-    const pairHandles = container.querySelectorAll('.pair-drag-handle');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle, .group-drag-handle');
     const seatLabels = container.querySelectorAll('.seat-label');
     
     // Temporarily remove background colors
@@ -695,6 +695,76 @@ function App() {
     }
   };
 
+  const handleCopyToClipboard = async () => {
+    if (!seatingGridRef.current || !currentChart) return;
+    
+    const container = seatingGridRef.current;
+    
+    // Temporarily hide elements we don't want in the clipboard image
+    const lockButtons = container.querySelectorAll('.lock-button');
+    const removeButtons = container.querySelectorAll('.remove-button');
+    const pairHandles = container.querySelectorAll('.pair-drag-handle, .group-drag-handle');
+    const seatLabels = container.querySelectorAll('.seat-label');
+    
+    // Temporarily remove background colors
+    const gridContainer = container;
+    const seatingGrid = container.querySelector('.seating-grid') as HTMLElement;
+    const originalContainerBg = gridContainer.style.backgroundColor;
+    const originalGridBg = seatingGrid?.style.backgroundColor;
+    const originalGridShadow = seatingGrid?.style.boxShadow;
+    
+    gridContainer.style.backgroundColor = 'white';
+    if (seatingGrid) {
+      seatingGrid.style.backgroundColor = 'white';
+      seatingGrid.style.boxShadow = 'none';
+    }
+
+    container.classList.add('export-mode');
+    
+    lockButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    removeButtons.forEach(el => (el as HTMLElement).style.display = 'none');
+    pairHandles.forEach(el => (el as HTMLElement).style.display = 'none');
+    seatLabels.forEach(el => (el as HTMLElement).style.display = 'none');
+    
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          alert('Feil: Kunne ikke kopiere bilde til utklippstavlen');
+          return;
+        }
+        
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          // Show success message
+          const message = 'Klassekart kopiert til utklippstavlen!';
+          alert(message);
+        } catch (err) {
+          alert('Feil: Kunne ikke kopiere bilde til utklippstavlen');
+          console.error('Failed to copy to clipboard:', err);
+        }
+      }, 'image/png');
+    } finally {
+      // Restore hidden elements and backgrounds
+      container.classList.remove('export-mode');
+      lockButtons.forEach(el => (el as HTMLElement).style.display = '');
+      removeButtons.forEach(el => (el as HTMLElement).style.display = '');
+      pairHandles.forEach(el => (el as HTMLElement).style.display = '');
+      seatLabels.forEach(el => (el as HTMLElement).style.display = '');
+      gridContainer.style.backgroundColor = originalContainerBg;
+      if (seatingGrid) {
+        seatingGrid.style.backgroundColor = originalGridBg || '';
+        seatingGrid.style.boxShadow = originalGridShadow || '';
+      }
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -741,8 +811,12 @@ function App() {
               <input
                 type="checkbox"
                 checked={pairedSeating}
-                disabled={useCustomLayout}
-                onChange={(e) => setPairedSeating(e.target.checked)}
+                onChange={(e) => {
+                  setPairedSeating(e.target.checked);
+                  if (e.target.checked && useCustomLayout) {
+                    setUseCustomLayout(false);
+                  }
+                }}
               />
               Bruk Makkerpar
             </label>
@@ -917,13 +991,16 @@ function App() {
                 >
                   Alternativer
                 </button>
-                <button className="btn btn-secondary" onClick={handleGeneratePDF}>
-                  Lagre PDF
+                <button className="btn btn-secondary btn-export" onClick={handleCopyToClipboard}>
+                  Kopier til utklippstavle
                 </button>
-                <button className="btn btn-secondary" onClick={handleGeneratePNG}>
+                <button className="btn btn-secondary btn-export" onClick={handleGeneratePNG}>
                   Lagre bilde (PNG)
                 </button>
-                <button className="btn btn-secondary" onClick={handlePrintChart}>
+                <button className="btn btn-secondary btn-export" onClick={handleGeneratePDF}>
+                  Lagre PDF
+                </button>
+                <button className="btn btn-secondary btn-export" onClick={handlePrintChart}>
                   Print klassekart
                 </button>
               </div>

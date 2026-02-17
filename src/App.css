@@ -368,6 +368,17 @@
   border-color: #999;
 }
 
+.btn-export {
+  background-color: #dfe1e0;
+  color: #333;
+  border: 1px solid #c5c8c7;
+}
+
+.btn-export:hover {
+  background-color: #d0d2d1;
+  border-color: #b0b2b1;
+}
+
 .empty-state {
   background-color: white;
   padding: 60px 20px;

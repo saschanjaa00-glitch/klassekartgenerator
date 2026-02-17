@@ -279,3 +279,19 @@
     display: none;
   }
 }
+
+/* Hide elements in export mode */
+.export-mode .pair-drag-handle,
+.export-mode .group-drag-handle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.export-mode .seat-label {
+  display: none !important;
+  visibility: hidden !important;
+}
