@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { SeatingChart, Student, SeatingConstraints } from './types';
 import { storageUtils } from './utils/storage';
 import { seatingUtils } from './utils/seating';
@@ -6,6 +6,8 @@ import { generateRandomNamesWithGender } from './utils/names';
 import { StudentForm } from './components/StudentForm';
 import { SeatingGrid } from './components/SeatingGrid';
 import { StudentList } from './components/StudentList';
+import { createTranslator, isLanguage } from './i18n';
+import type { Language } from './i18n';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import './App.css';
@@ -15,6 +17,7 @@ function App() {
   const [currentChartId, setCurrentChartId] = useState<string | null>(null);
   const [gridSize, setGridSize] = useState({ rows: 5, cols: 6 });
   const [chartName, setChartName] = useState('');
+  const [language, setLanguage] = useState<Language>('no');
   const [pairedSeating, setPairedSeating] = useState(true);
   const [useCustomLayout, setUseCustomLayout] = useState(false);
   const [customLayoutText, setCustomLayoutText] = useState('');
@@ -30,6 +33,19 @@ function App() {
   const [newTogetherGroup, setNewTogetherGroup] = useState<string[]>([]);
   const [newApartPair, setNewApartPair] = useState<string[]>([]);
   const seatingGridRef = useRef<HTMLDivElement>(null);
+  const t = useMemo(() => createTranslator(language), [language]);
+  const locale = language === 'no' ? 'no' : 'en';
+
+  useEffect(() => {
+    const storedLanguage = localStorage.getItem('language');
+    if (isLanguage(storedLanguage)) {
+      setLanguage(storedLanguage);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
 
   // Load charts from storage on mount
   useEffect(() => {
@@ -70,7 +86,7 @@ function App() {
 
   const handleCreateChart = () => {
     if (!chartName.trim()) {
-      alert('Vennligst skriv inn et kartnavn');
+      alert(t('missingChartName'));
       return;
     }
 
@@ -78,12 +94,12 @@ function App() {
     let effectivePairedSeating = pairedSeating;
     if (useCustomLayout) {
       if (!customLayoutText.trim()) {
-        alert('Skriv inn et tilpasset oppsett før du lager et kart');
+        alert(t('missingCustomLayoutCreate'));
         return;
       }
       const parsed = seatingUtils.parseCustomLayout(customLayoutText);
       if (!parsed) {
-        alert('Ugyldig oppsett. Bruk tall separert med mellomrom eller bindestrek.');
+        alert(t('invalidCustomLayout'));
         return;
       }
       customLayout = parsed;
@@ -105,7 +121,7 @@ function App() {
   };
 
   const handleDeleteChart = (chartId: string) => {
-    if (window.confirm('Er du sikker på at du vil slette dette kartet?')) {
+    if (window.confirm(t('deleteChartConfirm'))) {
       const updated = charts.filter(c => c.id !== chartId);
       setCharts(updated);
       storageUtils.deleteChart(chartId);
@@ -119,7 +135,7 @@ function App() {
     const chart = charts.find(c => c.id === chartId);
     if (!chart) return;
     
-    const newName = window.prompt('Nytt navn for kartet:', chart.name);
+    const newName = window.prompt(t('renameChartPrompt'), chart.name);
     if (newName && newName.trim()) {
       const updated = charts.map(c =>
         c.id === chartId ? { ...c, name: newName.trim() } : c
@@ -137,7 +153,7 @@ function App() {
     const copiedChart: typeof chart = {
       ...chart,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: `${chart.name} (kopi)`,
+      name: `${chart.name} (${t('copySuffix')})`,
       updatedAt: new Date().toISOString()
     };
     
@@ -148,7 +164,7 @@ function App() {
 
   const handleExportCharts = () => {
     if (charts.length === 0) {
-      alert('Ingen kart å eksportere');
+      alert(t('noChartsToExport'));
       return;
     }
     const dataStr = JSON.stringify(charts, null, 2);
@@ -156,7 +172,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'klasseromskart.json';
+    link.download = t('exportFileName');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -172,14 +188,12 @@ function App() {
       try {
         const importedCharts = JSON.parse(event.target?.result as string);
         if (!Array.isArray(importedCharts)) {
-          alert('Ugyldig filformat');
+          alert(t('invalidFileFormat'));
           return;
         }
         
         // Ask if they want to replace or merge
-        const shouldReplace = window.confirm(
-          'Vil du erstatte alle eksisterende kart? Klikk OK for å erstatte, eller Avbryt for å legge til.'
-        );
+        const shouldReplace = window.confirm(t('importReplaceConfirm'));
         
         if (shouldReplace) {
           setCharts(importedCharts);
@@ -194,9 +208,10 @@ function App() {
           setCharts(merged);
         }
         
-        alert(`Importerte ${importedCharts.length} kart`);
+        const importedMessage = (t('importedCharts'))(importedCharts.length);
+        alert(importedMessage);
       } catch {
-        alert('Kunne ikke lese filen. Sørg for at det er en gyldig JSON-fil.');
+        alert(t('importReadError'));
       }
     };
     reader.readAsText(file);
@@ -206,7 +221,7 @@ function App() {
 
   const handleUpdateChartSize = () => {
     if (!currentChart) {
-      alert('Velg et kart å oppdatere');
+      alert(t('selectChartToUpdate'));
       return;
     }
 
@@ -217,12 +232,12 @@ function App() {
 
     if (useCustomLayout) {
       if (!customLayoutText.trim()) {
-        alert('Skriv inn et tilpasset oppsett før du oppdaterer kartet');
+        alert(t('missingCustomLayoutUpdate'));
         return;
       }
       const parsed = seatingUtils.parseCustomLayout(customLayoutText);
       if (!parsed) {
-        alert('Ugyldig oppsett. Bruk tall separert med mellomrom eller bindestrek.');
+        alert(t('invalidCustomLayout'));
         return;
       }
       customLayout = parsed;
@@ -403,7 +418,7 @@ function App() {
 
   const handleClearPlacements = () => {
     if (!currentChart) return;
-    if (window.confirm('Fjerne alle elevplasseringer?')) {
+    if (window.confirm(t('clearPlacementsConfirm'))) {
       const updated = seatingUtils.clearPlacements(currentChart);
       setCharts(charts.map(c => c.id === currentChart.id ? updated : c));
     }
@@ -423,10 +438,11 @@ function App() {
     const unlockedCount = currentChart.students.filter(s => !lockedIds.has(s.id)).length;
     
     if (unlockedCount === 0) {
-      alert('Ingen ulåste elever å plassere');
+      alert(t('noUnlockedToPlace'));
       return;
     }
-    if (window.confirm(`Plassere ${unlockedCount} ulåste elev${unlockedCount !== 1 ? 'er' : ''} tilfeldig?`)) {
+    const randomizeMessage = (t('randomizeConfirm'))(unlockedCount);
+    if (window.confirm(randomizeMessage)) {
       const constraints: SeatingConstraints = {
         placeTogether,
         keepApart,
@@ -439,7 +455,7 @@ function App() {
 
   const handleClearAllStudents = () => {
     if (!currentChart) return;
-    if (window.confirm('Fjerne alle elever fra dette kartet?')) {
+    if (window.confirm(t('clearAllStudentsConfirm'))) {
       const updatedChart = {
         ...currentChart,
         students: [],
@@ -462,7 +478,7 @@ function App() {
       }
     }
     if (unlockedCount < 2) {
-      alert('Trenger minst 2 ulåste plasserte elever for å blande');
+      alert(t('needAtLeastTwoToShuffle'));
       return;
     }
     const constraints: SeatingConstraints = {
@@ -562,7 +578,7 @@ function App() {
       const yOffset = margin + (availableHeight - imgHeight) / 2;
       
       pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
-      pdf.save(`${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_seating_chart.pdf`);
+      pdf.save(`${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_${t('pdfFileSuffix')}.pdf`);
     } finally {
       // Restore hidden elements and backgrounds
       container.classList.remove('export-mode');
@@ -617,7 +633,7 @@ function App() {
       
       // Download as PNG
       const link = document.createElement('a');
-      link.download = `${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_seating_chart.png`;
+      link.download = `${currentChart.name.replace(/[^a-z0-9]/gi, '_')}_${t('pngFileSuffix')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } finally {
@@ -765,7 +781,7 @@ function App() {
       
       canvas.toBlob(async (blob) => {
         if (!blob) {
-          alert('Feil: Kunne ikke kopiere bilde til utklippstavlen');
+          alert(t('copyClipboardError'));
           return;
         }
         
@@ -774,10 +790,10 @@ function App() {
             new ClipboardItem({ 'image/png': blob })
           ]);
           // Show success message
-          const message = 'Klassekart kopiert til utklippstavlen!';
+          const message = t('copyClipboardSuccess');
           alert(message);
         } catch (err) {
-          alert('Feil: Kunne ikke kopiere bilde til utklippstavlen');
+          alert(t('copyClipboardError'));
           console.error('Failed to copy to clipboard:', err);
         }
       }, 'image/png');
@@ -799,26 +815,55 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <div className="header-actions" aria-label={t('languageLabel')}>
+          <div className="language-switcher">
+            <button
+              type="button"
+              className={`lang-button ${language === 'no' ? 'active' : ''}`}
+              onClick={() => setLanguage('no')}
+              aria-pressed={language === 'no'}
+            >
+              {t('languageNo')}
+            </button>
+            <span className="lang-separator">/</span>
+            <button
+              type="button"
+              className={`lang-button ${language === 'en' ? 'active' : ''}`}
+              onClick={() => setLanguage('en')}
+              aria-pressed={language === 'en'}
+            >
+              {t('languageEn')}
+            </button>
+          </div>
+          <a
+            className="paypal-donate"
+            href="https://www.paypal.com/donate/?hosted_button_id=JFTXHNDM92CL8"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('donateLabel')}
+          </a>
+        </div>
         <div className="brand-kicker">
           <span className="brand-title">mittKlassekart.com</span>
-          <span className="brand-subtitle">Helt gratis, uten innlogging</span>
+          <span className="brand-subtitle">{t('brandSubtitle')}</span>
         </div>
       </header>
 
       <div className="app-container">
         <aside className="sidebar">
           <div className="chart-creation">
-            <h3>Opprett nytt klassekart</h3>
+            <h3>{t('createChartTitle')}</h3>
             <input
               type="text"
-              placeholder="Kartnavn (f.eks. Time 1)"
+              placeholder={t('chartNamePlaceholder')}
               value={chartName}
               onChange={(e) => setChartName(e.target.value)}
             />
             
             <div className="grid-size-inputs">
               <div className="size-input">
-                <label>Rader:</label>
+                <label>{t('rowsLabel')}</label>
                 <input
                   type="number"
                   min="1"
@@ -829,7 +874,7 @@ function App() {
                 />
               </div>
               <div className="size-input">
-                <label>Kolonner:</label>
+                <label>{t('colsLabel')}</label>
                 <input
                   type="number"
                   min="1"
@@ -851,7 +896,7 @@ function App() {
                   }
                 }}
               />
-              Bruk Makkerpar
+              {t('usePairsLabel')}
             </label>
             <label className="toggle-label">
               <input
@@ -868,45 +913,42 @@ function App() {
                   }
                 }}
               />
-              Tilpasset oppsett
+              {t('customLayoutLabel')}
             </label>
             {useCustomLayout && (
               <div className="custom-layout">
                 <textarea
                   className="layout-textarea"
-                  placeholder={`eks.
-2 3 3 2
-2 3 3 2
-2 3 3 2`}
+                  placeholder={t('customLayoutPlaceholder')}
                   value={customLayoutText}
                   onChange={(e) => setCustomLayoutText(e.target.value)}
                   rows={4}
                 />
                 <p className="layout-hint">
-                  En linje per rad.<br />
-                  Bruk mellomrom eller bindestrek mellom gruppene.
+                  {t('customLayoutHintLine1')}<br />
+                  {t('customLayoutHintLine2')}
                 </p>
               </div>
             )}
             <div className="chart-buttons">
               <button className="btn btn-primary" onClick={handleCreateChart}>
-                Nytt klassekart
+                {t('newChartButton')}
               </button>
               <button 
                 className="btn btn-secondary" 
                 onClick={handleUpdateChartSize}
                 disabled={!currentChart}
-                title={currentChart ? `Oppdater ${currentChart.name}` : 'Velg et kart først'}
+                title={currentChart ? (t('updateChartTitle'))(currentChart.name) : t('selectChartFirstTitle')}
               >
-                Oppdater klassekart
+                {t('updateChartButton')}
               </button>
             </div>
           </div>
 
           <div className="charts-list">
-            <h3>Klassekartoversikt</h3>
+            <h3>{t('chartsOverviewTitle')}</h3>
             {charts.length === 0 ? (
-              <p className="empty-message">Ingen kart ennå</p>
+              <p className="empty-message">{t('noChartsYet')}</p>
             ) : (
               <ul>
                 {charts.map(chart => (
@@ -920,21 +962,21 @@ function App() {
                     <button
                       className="btn-rename"
                       onClick={() => handleRenameChart(chart.id)}
-                      title="Endre navn"
+                      title={t('renameTitle')}
                     >
                       ✏️
                     </button>
                     <button
                       className="btn-copy"
                       onClick={() => handleCopyChart(chart.id)}
-                      title="Dupliser"
+                      title={t('duplicateTitle')}
                     >
                       📋
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDeleteChart(chart.id)}
-                      title="Slett"
+                      title={t('deleteTitle')}
                     >
                       ×
                     </button>
@@ -946,10 +988,10 @@ function App() {
 
           <div className="import-export">
             <button className="btn btn-secondary btn-full" onClick={handleExportCharts}>
-              Eksporter til fil
+              {t('exportToFile')}
             </button>
             <label className="btn btn-secondary btn-full import-label">
-              Importer fra fil
+              {t('importFromFile')}
               <input
                 type="file"
                 accept=".json"
@@ -958,51 +1000,42 @@ function App() {
               />
             </label>
             <p className="import-export-hint">
-              <strong>Eksporter til fil:</strong> Lagre dataene dine til en fil på datamaskinen.
+              <strong>{t('exportHintTitle')}</strong> {t('exportHintBody')}
             </p>
             <p className="import-export-hint">
-              <strong>Importer fra fil:</strong> Hent tilbake lagrede data eller overfør fra en annen nettleser.
+              <strong>{t('importHintTitle')}</strong> {t('importHintBody')}
             </p>
             <button 
               className="btn btn-secondary btn-full"
               onClick={() => setShowHelp(!showHelp)}
             >
-              {showHelp ? 'Skjul hjelp' : 'Vis hjelp'}
+              {showHelp ? t('hideHelp') : t('showHelp')}
             </button>
             {showHelp && (
               <div className="help-section">
-                <h4>Hvordan bruke appen</h4>
+                <h4>{t('helpTitle')}</h4>
                 <ul>
-                  <li><strong>Opprett klassekart:</strong> Skriv inn navn og velg antall rader og kolonner, trykk "Nytt klassekart".</li>
-                  <li><strong>Bruk makkerpar:</strong> Aktiver for å sette pulter i par.</li>
-                  <li><strong>Tilpasset oppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
-                  <li><strong>Oppdater klassekart:</strong> Oppdater antall rader osv. uten å fjerne alle navn fra listen.</li>
-                  <li><strong>Legg til elever:</strong> Skriv inn navn og trykk Enter for å lage ny linje. Skriv inn ett navn per linje. Trykk "Legg til # elever".</li>
-                  <li><strong>Velg kjønn:</strong> Trykk på symbol for mann / dame. Kan brukes for å blande kjønn (se "Alternativer").</li>
-                  <li><strong>Plasser elever:</strong> Bruk "Automatisk plassering" eller gjør det manuelt med å dra de ned på plass.</li>
-                  <li><strong>Bytt plasser:</strong> Dra en elev over en annen for å bytte plass, makkerpar kan også flyttes ved å dra i symbolet med de 6 prikkene.</li>
-                  <li><strong>Bland plasserte:</strong> Blander alle ulåste elever - prøver å unngå å plassere dem ved siden av samme personer som før.</li>
-                  <li><strong>Lås plassering:</strong> Klikk på hengelåsen for å låse en elev på plass.</li>
-                  <li><strong>Fjern fra plass:</strong> I klassekartet, trykk på X-knappen for å flytte eleven tilbake til "Uplasserte elever"-listen.</li>
-                  <li><strong>Fjern elev:</strong> I "Uplasserte elever"-listen, trykk på X-knappen for å slette eleven.</li>
-                  <li><strong>Kopier til utklippstavle:</strong> Tar et skjermbilde av klassekartet og kopierer det, slik at du kan lime det inn i andre programmer.</li>
-                  <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
-                  <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
+                  {(t('helpSteps')).map((step) => (
+                    <li key={step.title}>
+                      <strong>{step.title}</strong> {step.body}
+                    </li>
+                  ))}
                 </ul>
-                <h4>Alternativer</h4>
+                <h4>{t('helpAlternativesTitle')}</h4>
                 <ul>
-                  <li><strong>Bland kjønn:</strong> Huk av for å blande kjønn i klassekartet.</li>
-                  <li><strong>Plasser sammen:</strong> Velg to elever som alltid skal sitte ved siden av hverandre.</li>
-                  <li><strong>Hold fra hverandre:</strong> Velg to elever som IKKE skal sitte ved siden av hverandre.</li>
+                  {(t('helpAlternatives')).map((step) => (
+                    <li key={step.title}>
+                      <strong>{step.title}</strong> {step.body}
+                    </li>
+                  ))}
                 </ul>
-                <h4>Personvern (GDPR)</h4>
+                <h4>{t('privacyTitle')}</h4>
                 <ul>
-                  <li>Alle data lagres lokalt i nettleseren din (localStorage).</li>
-                  <li>Ingen data sendes til noen server eller tredjepart.</li>
-                  <li>Du kan når som helst slette alle data ved å tømme nettleserdata eller bruke "Fjern alle elever".</li>
-                  <li>Bruk "Eksporter til fil" for å ta sikkerhetskopi av dataene dine.</li>
+                  {(t('privacyItems')).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
-                <p className="credits">Laget av Sascha Njaa Tjelta</p>
+                <p className="credits">{t('credits')}</p>
               </div>
             )}
           </div>
@@ -1011,51 +1044,53 @@ function App() {
         <main className="main-content">
           {currentChart ? (
             <>
-              <StudentForm onAddStudent={handleAddStudents} />
+              <StudentForm onAddStudent={handleAddStudents} t={t} />
 
               <StudentList
                 students={unplacedStudents}
                 onRemoveStudent={handleRemoveStudent}
                 onUpdateStudent={handleUpdateStudent}
                 onDropFromGrid={handleDropFromGrid}
+                t={t}
+                locale={locale}
               />
 
               <div className="controls">
                 <button className="btn btn-secondary" onClick={handleRandomizeSeating}>
-                  Automatisk plassering
+                  {t('controlsAutoPlace')}
                 </button>
                 <button className="btn btn-secondary" onClick={handleShuffleSeated}>
-                  Bland plasserte
+                  {t('controlsShuffleSeated')}
                 </button>
                 <button className="btn btn-secondary" onClick={handleClearPlacements}>
-                  Fjern plasseringer
+                  {t('controlsClearPlacements')}
                 </button>
                 <button className="btn btn-secondary" onClick={handleClearAllStudents}>
-                  Fjern alle elever
+                  {t('controlsClearAllStudents')}
                 </button>
                 <button 
                   className={`btn btn-toggle ${showExtraControls ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setShowExtraControls(!showExtraControls)}
                 >
-                  Alternativer
+                  {t('controlsOptions')}
                 </button>
                 <button className="btn btn-secondary btn-export" onClick={handleCopyToClipboard}>
-                  Kopier til utklippstavle
+                  {t('controlsCopy')}
                 </button>
                 <button className="btn btn-secondary btn-export" onClick={handleGeneratePNG}>
-                  Lagre bilde (PNG)
+                  {t('controlsSavePng')}
                 </button>
                 <button className="btn btn-secondary btn-export" onClick={handleGeneratePDF}>
-                  Lagre PDF
+                  {t('controlsSavePdf')}
                 </button>
                 <button className="btn btn-secondary btn-export" onClick={handlePrintChart}>
-                  Print klassekart
+                  {t('controlsPrint')}
                 </button>
               </div>
 
               {showExtraControls && (
                 <div className="extra-controls">
-                  <h3>Alternativer</h3>
+                  <h3>{t('optionsTitle')}</h3>
                   
                   <div className="control-section alternatives-toggles">
                     <div className="alternative-item">
@@ -1065,7 +1100,7 @@ function App() {
                           checked={showGenderColors}
                           onChange={(e) => setShowGenderColors(e.target.checked)}
                         />
-                        Vis farge for gutt/jente (kun i forhåndsvisning)
+                        {t('showGenderColors')}
                       </label>
                     </div>
                     
@@ -1076,7 +1111,7 @@ function App() {
                           checked={mixGenders}
                           onChange={(e) => setMixGenders(e.target.checked)}
                         />
-                        Bland gutter og jenter
+                        {t('mixGenders')}
                       </label>
                     </div>
                   </div>
@@ -1084,10 +1119,10 @@ function App() {
                   <div className="control-section constraint-columns-grid">
                     <div className="constraint-column">
                       <div className="constraint-content">
-                        <h4>Plasser sammen</h4>
-                        <p className="control-hint">Velg 2 elever som skal sitte sammen</p>
+                        <h4>{t('placeTogetherTitle')}</h4>
+                        <p className="control-hint">{t('placeTogetherHint')}</p>
                         <div className="student-chips-container">
-                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, locale)).map(s => {
                             const isInRule = placeTogether.some(group => group.includes(s.id));
                             const isSelected = newTogetherGroup.includes(s.id);
                             const isDisabled = isInRule || (!isSelected && newTogetherGroup.length >= 2);
@@ -1118,18 +1153,18 @@ function App() {
                                 setPlaceTogether([...placeTogether, newTogetherGroup]);
                                 setNewTogetherGroup([]);
                               } else {
-                                alert('Velg minst 2 elever');
+                                alert(t('selectAtLeastTwoStudents'));
                               }
                             }}
                           >
-                            Legg til gruppe
+                            {t('addGroup')}
                           </button>
                           {newTogetherGroup.length > 0 && (
                             <button 
                               className="btn btn-small btn-clear"
                               onClick={() => setNewTogetherGroup([])}
                             >
-                              Nullstill
+                              {t('reset')}
                             </button>
                           )}
                         </div>
@@ -1157,10 +1192,10 @@ function App() {
                     
                     <div className="constraint-column">
                       <div className="constraint-content">
-                        <h4>Hold fra hverandre</h4>
-                        <p className="control-hint">Velg 2 elever som IKKE skal sitte sammen</p>
+                        <h4>{t('keepApartTitle')}</h4>
+                        <p className="control-hint">{t('keepApartHint')}</p>
                         <div className="student-chips-container">
-                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, 'no')).map(s => {
+                          {[...currentChart.students].sort((a, b) => a.name.localeCompare(b.name, locale)).map(s => {
                             const isSelected = newApartPair.includes(s.id);
                             const isDisabled = !isSelected && newApartPair.length >= 2;
                             return (
@@ -1190,18 +1225,18 @@ function App() {
                                 setKeepApart([...keepApart, newApartPair]);
                                 setNewApartPair([]);
                               } else {
-                                alert('Velg minst 2 elever');
+                                alert(t('selectAtLeastTwoStudents'));
                               }
                             }}
                           >
-                            Legg til gruppe
+                            {t('addGroup')}
                           </button>
                           {newApartPair.length > 0 && (
                             <button 
                               className="btn btn-small btn-clear"
                               onClick={() => setNewApartPair([])}
                             >
-                              Nullstill
+                              {t('reset')}
                             </button>
                           )}
                         </div>
@@ -1232,7 +1267,7 @@ function App() {
                     <button 
                       className="btn btn-secondary btn-constraint"
                       onClick={() => {
-                        const randomStudents = generateRandomNamesWithGender(30);
+                        const randomStudents = generateRandomNamesWithGender(30, language);
                         const students: Student[] = randomStudents.map(s => ({
                           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
                           name: s.name,
@@ -1241,7 +1276,7 @@ function App() {
                         handleAddStudents(students);
                       }}
                     >
-                      Generer 30 tilfeldige navn
+                      {t('generateRandomNames')}
                     </button>
                   </div>
                 </div>
@@ -1257,12 +1292,13 @@ function App() {
                 onSwapGroups={handleSwapGroups}
                 onToggleLock={handleToggleLock}
                 showGenderColors={showGenderColors}
+                t={t}
               />
             </>
           ) : (
             <div className="empty-state">
-              <h2>Ingen plasseringskart valgt</h2>
-              <p>Opprett et nytt kart for å komme i gang</p>
+              <h2>{t('emptyStateTitle')}</h2>
+              <p>{t('emptyStateBody')}</p>
             </div>
           )}
         </main>

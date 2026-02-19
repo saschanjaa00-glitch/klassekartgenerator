@@ -81,6 +81,11 @@
   z-index: 10;
 }
 
+.gender-toggle.unset .gender-icon {
+  opacity: 0.65;
+  filter: saturate(0.85);
+}
+
 .gender-icon {
   width: 28px;
   height: 28px;
@@ -120,6 +125,11 @@
   background: #f48fb1;
   color: white;
   box-shadow: 0 2px 4px rgba(194, 24, 91, 0.4);
+}
+
+.gender-toggle:not(.unset) .gender-icon:not(.selected) {
+  opacity: 0.75;
+  filter: saturate(0.9);
 }
 
 .btn-remove-student {

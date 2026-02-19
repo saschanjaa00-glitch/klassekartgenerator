@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import type { Student } from '../types';
+import type { TFunction } from '../i18n';
 import './StudentForm.css';
 
 interface StudentFormProps {
   onAddStudent: (students: Student[]) => void;
+  t: TFunction;
 }
 
-export const StudentForm: React.FC<StudentFormProps> = ({ onAddStudent }) => {
+export const StudentForm: React.FC<StudentFormProps> = ({ onAddStudent, t }) => {
   const [names, setNames] = useState('');
   const [error, setError] = useState('');
 
@@ -24,7 +26,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({ onAddStudent }) => {
       .filter(line => line.length > 0);
 
     if (lines.length === 0) {
-      setError('Vennligst skriv inn minst ett elevnavn');
+      setError(t('studentFormErrorEmpty'));
       return;
     }
 
@@ -40,29 +42,31 @@ export const StudentForm: React.FC<StudentFormProps> = ({ onAddStudent }) => {
   };
 
   const lineCount = names.split('\n').filter(line => line.trim().length > 0).length;
+  const lineCountLabel = (t('studentFormLineCount'))(lineCount);
+  const addButtonLabel = (t('studentFormAddButton'))(lineCount);
 
   return (
     <form className="student-form" onSubmit={handleSubmit}>
-      <h3>Legg til elever</h3>
+      <h3>{t('studentFormTitle')}</h3>
       {error && <div className="error-message">{error}</div>}
       
       <div className="form-group">
         <label htmlFor="names">
-          Elevnavn <span className="hint">(én per linje)</span>
+          {t('studentFormLabel')} <span className="hint">{t('studentFormHint')}</span>
         </label>
         <textarea
           id="names"
           value={names}
           onChange={handleChange}
-          placeholder="Skriv inn elevnavn, én per linje:&#10;Ola Nordmann&#10;Kari Hansen&#10;Per Olsen"
+          placeholder={t('studentFormPlaceholder')}
           rows={6}
         />
-        {lineCount > 0 && <div className="line-count">{lineCount} elev{lineCount !== 1 ? 'er' : ''}</div>}
+        {lineCount > 0 && <div className="line-count">{lineCountLabel}</div>}
       </div>
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">
-          Legg til {lineCount} elev{lineCount !== 1 ? 'er' : ''}
+          {addButtonLabel}
         </button>
       </div>
     </form>

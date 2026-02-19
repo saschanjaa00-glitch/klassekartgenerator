@@ -1,5 +1,6 @@
 import React, { useState, forwardRef } from 'react';
 import type { SeatingChart } from '../types';
+import type { TFunction } from '../i18n';
 import { StudentCard } from './StudentCard';
 import './SeatingGrid.css';
 
@@ -12,6 +13,7 @@ interface SeatingGridProps {
   onSwapGroups?: (row1: number, groupIndex1: number, row2: number, groupIndex2: number) => void;
   onToggleLock?: (studentId: string) => void;
   showGenderColors?: boolean;
+  t: TFunction;
 }
 
 export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
@@ -23,7 +25,8 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     onSwapPairs,
     onSwapGroups,
     onToggleLock,
-    showGenderColors = false
+    showGenderColors = false,
+    t
   },
   ref
 ) => {
@@ -281,6 +284,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
       >
         <StudentCard
           student={displayStudent}
+          t={t}
           draggable={!!student}
           onToggleLock={onToggleLock}
           onRemove={student ? () => onRemoveStudent(rowIndex, colIndex) : undefined}
@@ -297,7 +301,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
     <div className="seating-grid-container" ref={ref}>
       <h2>{chart.name}</h2>
       <div className="whiteboard">
-        <span>TAVLE</span>
+        <span>{t('seatingGridBoard')}</span>
       </div>
       <div
         className={`seating-grid ${usePairs ? 'paired' : ''} ${hasCustomLayout ? 'custom-layout' : ''} ${!usePairs && !hasCustomLayout && chart.cols >= 8 ? 'many-cols' : ''}`}
@@ -336,7 +340,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
                       draggable
                       onDragStart={handlePairDragStart(rowIndex, pairIndex)}
                       onDragEnd={handlePairDragEnd}
-                      title="Dra for å bytte dette paret"
+                      title={t('dragPairTitle')}
                     >
                       ⋮⋮
                     </div>
@@ -367,7 +371,7 @@ export const SeatingGrid = forwardRef<HTMLDivElement, SeatingGridProps>((
                         draggable
                         onDragStart={handleGroupDragStart(rowIndex, groupIndex, group.size)}
                         onDragEnd={handleGroupDragEnd}
-                        title="Dra for å bytte denne gruppen"
+                        title={t('dragGroupTitle')}
                       >
                         ⋮⋮
                       </div>

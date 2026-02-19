@@ -56,6 +56,64 @@ export const generateRandomNameWithGender = (): { name: string; gender: 'male' |
   };
 };
 
+const maleFirstNamesEn = [
+  'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas',
+  'Henry', 'Theodore', 'Jack', 'Levi', 'Alexander', 'Jackson', 'Mateo', 'Daniel',
+  'Michael', 'Mason', 'Sebastian', 'Ethan', 'Logan', 'Owen', 'Samuel', 'Jacob',
+  'Asher', 'Aiden', 'John', 'Joseph', 'Wyatt', 'David', 'Leo', 'Luke',
+  'Julian', 'Hudson', 'Grayson', 'Matthew', 'Ezra', 'Gabriel', 'Carter', 'Isaac',
+  'Jayden', 'Luca', 'Anthony', 'Dylan', 'Lincoln', 'Thomas', 'Maverick', 'Elias'
+];
+
+const femaleFirstNamesEn = [
+  'Olivia', 'Emma', 'Charlotte', 'Amelia', 'Sophia', 'Isabella', 'Ava', 'Mia',
+  'Evelyn', 'Luna', 'Harper', 'Camila', 'Sofia', 'Scarlett', 'Elizabeth', 'Eleanor',
+  'Emily', 'Chloe', 'Mila', 'Violet', 'Penelope', 'Gianna', 'Aria', 'Abigail',
+  'Ella', 'Avery', 'Hazel', 'Nora', 'Lily', 'Zoe', 'Riley', 'Grace',
+  'Hannah', 'Layla', 'Lillian', 'Addison', 'Aubrey', 'Ellie', 'Stella', 'Natalie',
+  'Leah', 'Savannah', 'Brooklyn', 'Audrey', 'Lucy', 'Bella', 'Aurora', 'Claire'
+];
+
+const lastNamesEn = [
+  'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+  'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas',
+  'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White',
+  'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young',
+  'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+  'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell'
+];
+
+type FirstNameInfo = {
+  count: number;
+  firstIndex: number;
+  firstInitial: string;
+};
+
+const buildInitialName = (firstName: string, initial: string) => `${firstName} ${initial}.`;
+
+const getUniqueInitialName = (
+  firstName: string,
+  usedNames: Set<string>,
+  preferredInitial?: string,
+  avoidName?: string
+): string => {
+  if (preferredInitial) {
+    const preferredName = buildInitialName(firstName, preferredInitial);
+    if (!usedNames.has(preferredName) && preferredName !== avoidName) {
+      return preferredName;
+    }
+  }
+
+  while (true) {
+    const lastName = lastNamesEn[Math.floor(Math.random() * lastNamesEn.length)];
+    const initial = lastName.charAt(0).toUpperCase();
+    const displayName = buildInitialName(firstName, initial);
+    if (!usedNames.has(displayName) && displayName !== avoidName) {
+      return displayName;
+    }
+  }
+};
+
 export const generateRandomNames = (count: number): string[] => {
   const names: string[] = [];
   const usedNames = new Set<string>();
@@ -72,9 +130,80 @@ export const generateRandomNames = (count: number): string[] => {
   return names;
 };
 
-export const generateRandomNamesWithGender = (count: number): { name: string; gender: 'male' | 'female' }[] => {
+export const generateRandomNamesWithGender = (
+  count: number,
+  language: 'no' | 'en' = 'no'
+): { name: string; gender: 'male' | 'female' }[] => {
   const results: { name: string; gender: 'male' | 'female' }[] = [];
   const usedNames = new Set<string>();
+
+  if (language === 'en') {
+    const firstNameInfo = new Map<string, FirstNameInfo>();
+
+    while (results.length < count) {
+      const isMale = Math.random() < 0.5;
+      const firstNames = isMale ? maleFirstNamesEn : femaleFirstNamesEn;
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const lastName = lastNamesEn[Math.floor(Math.random() * lastNamesEn.length)];
+      const initial = lastName.charAt(0).toUpperCase();
+      const info = firstNameInfo.get(firstName);
+
+      if (!info) {
+        const displayName = firstName;
+        if (usedNames.has(displayName)) {
+          continue;
+        }
+
+        results.push({ name: displayName, gender: isMale ? 'male' : 'female' });
+        usedNames.add(displayName);
+        firstNameInfo.set(firstName, {
+          count: 1,
+          firstIndex: results.length - 1,
+          firstInitial: initial
+        });
+        continue;
+      }
+
+      if (info.count === 1) {
+        const previousName = results[info.firstIndex].name;
+        usedNames.delete(previousName);
+
+        const updatedPreviousName = getUniqueInitialName(
+          firstName,
+          usedNames,
+          info.firstInitial
+        );
+        results[info.firstIndex].name = updatedPreviousName;
+        usedNames.add(updatedPreviousName);
+
+        const currentName = getUniqueInitialName(
+          firstName,
+          usedNames,
+          initial,
+          updatedPreviousName
+        );
+        results.push({ name: currentName, gender: isMale ? 'male' : 'female' });
+        usedNames.add(currentName);
+        firstNameInfo.set(firstName, {
+          ...info,
+          count: 2
+        });
+        continue;
+      }
+
+      const currentName = getUniqueInitialName(firstName, usedNames, initial);
+      results.push({ name: currentName, gender: isMale ? 'male' : 'female' });
+      usedNames.add(currentName);
+      firstNameInfo.set(firstName, {
+        ...info,
+        count: info.count + 1
+      });
+
+      continue;
+    }
+
+    return results;
+  }
 
   while (results.length < count) {
     const result = generateRandomNameWithGender();

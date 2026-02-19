@@ -1,9 +1,11 @@
 import React from 'react';
 import type { Student } from '../types';
+import type { TFunction } from '../i18n';
 import './StudentCard.css';
 
 interface StudentCardProps {
   student: Student | null;
+  t: TFunction;
   onClick?: () => void;
   draggable?: boolean;
   onToggleLock?: (studentId: string) => void;
@@ -16,6 +18,7 @@ interface StudentCardProps {
 
 export const StudentCard: React.FC<StudentCardProps> = ({
   student,
+  t,
   onClick,
   draggable = false,
   onToggleLock,
@@ -54,7 +57,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
   if (!student) {
     return (
       <div className="student-card empty" onClick={onClick}>
-        <span className="empty-seat">Tom</span>
+        <span className="empty-seat">{t('studentCardEmpty')}</span>
       </div>
     );
   }
@@ -71,7 +74,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
         <button
           className="remove-button"
           onClick={handleRemoveClick}
-          title="Fjern fra plass"
+          title={t('removeFromSeatTitle')}
         >
           ×
         </button>
@@ -80,7 +83,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({
         <button
           className={`lock-button ${student.locked ? 'locked' : ''}`}
           onClick={handleLockClick}
-          title={student.locked ? 'Lås opp elev' : 'Lås elev på plass'}
+          title={student.locked ? t('unlockStudentTitle') : t('lockStudentTitle')}
         >
           {student.locked ? '🔒' : '🔓'}
         </button>
