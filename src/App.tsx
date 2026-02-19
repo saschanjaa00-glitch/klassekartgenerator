@@ -799,8 +799,10 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Klassekart</h1>
-        <p>Organiser og administrer elevplasseringer</p>
+        <div className="brand-kicker">
+          <span className="brand-title">mittKlassekart.com</span>
+          <span className="brand-subtitle">Helt gratis, uten innlogging</span>
+        </div>
       </header>
 
       <div className="app-container">
@@ -973,6 +975,7 @@ function App() {
                 <ul>
                   <li><strong>Opprett klassekart:</strong> Skriv inn navn og velg antall rader og kolonner, trykk "Nytt klassekart".</li>
                   <li><strong>Bruk makkerpar:</strong> Aktiver for å sette pulter i par.</li>
+                  <li><strong>Tilpasset oppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
                   <li><strong>Oppdater klassekart:</strong> Oppdater antall rader osv. uten å fjerne alle navn fra listen.</li>
                   <li><strong>Legg til elever:</strong> Skriv inn navn og trykk Enter for å lage ny linje. Skriv inn ett navn per linje. Trykk "Legg til # elever".</li>
                   <li><strong>Velg kjønn:</strong> Trykk på symbol for mann / dame. Kan brukes for å blande kjønn (se "Alternativer").</li>
@@ -982,15 +985,15 @@ function App() {
                   <li><strong>Lås plassering:</strong> Klikk på hengelåsen for å låse en elev på plass.</li>
                   <li><strong>Fjern fra plass:</strong> I klassekartet, trykk på X-knappen for å flytte eleven tilbake til "Uplasserte elever"-listen.</li>
                   <li><strong>Fjern elev:</strong> I "Uplasserte elever"-listen, trykk på X-knappen for å slette eleven.</li>
+                  <li><strong>Kopier til utklippstavle:</strong> Tar et skjermbilde av klassekartet og kopierer det, slik at du kan lime det inn i andre programmer.</li>
+                  <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
+                  <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
                 </ul>
                 <h4>Alternativer</h4>
                 <ul>
                   <li><strong>Bland kjønn:</strong> Huk av for å blande kjønn i klassekartet.</li>
                   <li><strong>Plasser sammen:</strong> Velg to elever som alltid skal sitte ved siden av hverandre.</li>
                   <li><strong>Hold fra hverandre:</strong> Velg to elever som IKKE skal sitte ved siden av hverandre.</li>
-                  <li><strong>Tilpasset oppsett:</strong> Skriv en linje per rad. Tallene angir antall plasser per gruppe i rekkefolge fra venstre til høyre (f.eks. "2 3 3 2" gir fire grupper med totalt 10 seter). Bruk mellomrom eller bindestrek mellom grupper. Like store grupper kan byttes ved a dra i håndtaket over gruppen.</li>
-                  <li><strong>Lagre PDF/PNG:</strong> Eksporter klassekartet som PDF eller bilde.</li>
-                  <li><strong>Print klassekart:</strong> Lag en utskrift.</li>
                 </ul>
                 <h4>Personvern (GDPR)</h4>
                 <ul>
