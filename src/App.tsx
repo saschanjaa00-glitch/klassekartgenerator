@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Help } from './pages/Help';
@@ -7,34 +7,33 @@ import { createTranslator, isLanguage } from './i18n';
 import type { Language } from './i18n';
 import './App.css';
 
-function AppLayout() {
-  const [language, setLanguage] = useState<Language>('no');
-  const t = useMemo(() => createTranslator(language), [language]);
-  const location = useLocation();
+function LanguageRedirect() {
+  const { lang, '*': path } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if URL has /en or /no prefix
-    if (location.pathname.startsWith('/en')) {
-      setLanguage('en');
-      localStorage.setItem('language', 'en');
-      // Redirect to clean URL
-      const cleanPath = location.pathname.replace(/^\/en/, '') || '/';
+    if (lang === 'en' || lang === 'no') {
+      localStorage.setItem('language', lang);
+      // Redirect to clean path
+      const cleanPath = path ? `/${path}` : '/';
       navigate(cleanPath, { replace: true });
-    } else if (location.pathname.startsWith('/no')) {
-      setLanguage('no');
-      localStorage.setItem('language', 'no');
-      // Redirect to clean URL
-      const cleanPath = location.pathname.replace(/^\/no/, '') || '/';
-      navigate(cleanPath, { replace: true });
-    } else {
-      // Fall back to localStorage
-      const storedLanguage = localStorage.getItem('language');
-      if (isLanguage(storedLanguage)) {
-        setLanguage(storedLanguage);
-      }
     }
-  }, [location, navigate]);
+  }, [lang, path, navigate]);
+
+  return null;
+}
+
+function AppLayout() {
+  const [language, setLanguage] = useState<Language>('no');
+  const t = useMemo(() => createTranslator(language), [language]);
+
+  useEffect(() => {
+    // Read language from localStorage, or check URL params
+    const storedLanguage = localStorage.getItem('language');
+    if (isLanguage(storedLanguage)) {
+      setLanguage(storedLanguage);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -93,13 +92,8 @@ function AppLayout() {
         <Route path="/" element={<Home language={language} />} />
         <Route path="/help" element={<Help language={language} />} />
         <Route path="/about" element={<About language={language} />} />
-        {/* Language-prefixed routes */}
-        <Route path="/en" element={<Home language={language} />} />
-        <Route path="/en/help" element={<Help language={language} />} />
-        <Route path="/en/about" element={<About language={language} />} />
-        <Route path="/no" element={<Home language={language} />} />
-        <Route path="/no/help" element={<Help language={language} />} />
-        <Route path="/no/about" element={<About language={language} />} />
+        {/* Catch all /en/* and /no/* paths and redirect */}
+        <Route path="/:lang/*" element={<LanguageRedirect />} />
       </Routes>
     </div>
   );
