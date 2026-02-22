@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Language } from '../i18n';
 import '../App.css';
@@ -7,6 +8,46 @@ type HelpProps = {
 };
 
 export function Help({ language }: HelpProps) {
+  const canonicalBase = 'https://www.mittklassekart.com';
+  const canonicalUrl = `${canonicalBase}/help`;
+  const pageTitle = language === 'no' ? 'Hjelp og veiledning' : 'Help and Guide';
+  const pageDescription = language === 'no'
+    ? 'Slik bruker du MittKlassekart.com: oppsett, plassering, alternativer og eksport.'
+    : 'How to use MittKlassekart.com: setup, placement, options, and export.';
+
+  useEffect(() => {
+    const setMeta = (attr: 'name' | 'property', value: string, content: string) => {
+      let element = document.head.querySelector(`meta[${attr}="${value}"]`) as HTMLMetaElement | null;
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attr, value);
+        document.head.appendChild(element);
+      }
+      element.setAttribute('content', content);
+    };
+
+    const setCanonical = (url: string) => {
+      let element = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!element) {
+        element = document.createElement('link');
+        element.setAttribute('rel', 'canonical');
+        document.head.appendChild(element);
+      }
+      element.setAttribute('href', url);
+    };
+
+    document.title = pageTitle;
+    document.documentElement.lang = language === 'no' ? 'no' : 'en';
+    setMeta('name', 'description', pageDescription);
+    setCanonical(canonicalUrl);
+    setMeta('property', 'og:type', 'website');
+    setMeta('property', 'og:title', pageTitle);
+    setMeta('property', 'og:description', pageDescription);
+    setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'twitter:card', 'summary_large_image');
+    setMeta('property', 'twitter:title', pageTitle);
+    setMeta('property', 'twitter:description', pageDescription);
+  }, [canonicalUrl, language, pageDescription, pageTitle]);
 
   const sections = language === 'no' ? {
     title: 'Hjelp & Veiledning',

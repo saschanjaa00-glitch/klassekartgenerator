@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createTranslator } from '../i18n';
 import type { Language } from '../i18n';
@@ -10,6 +10,46 @@ type AboutProps = {
 
 export function About({ language }: AboutProps) {
   const t = useMemo(() => createTranslator(language), [language]);
+  const canonicalBase = 'https://www.mittklassekart.com';
+  const canonicalUrl = `${canonicalBase}/about`;
+  const pageTitle = language === 'no' ? 'Om MittKlassekart.com' : 'About MittKlassekart.com';
+  const pageDescription = language === 'no'
+    ? 'Lær om MittKlassekart.com, funksjoner, personvern og teknologien bak verktøyet.'
+    : 'Learn about MittKlassekart.com, its features, privacy, and the technology behind the tool.';
+
+  useEffect(() => {
+    const setMeta = (attr: 'name' | 'property', value: string, content: string) => {
+      let element = document.head.querySelector(`meta[${attr}="${value}"]`) as HTMLMetaElement | null;
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attr, value);
+        document.head.appendChild(element);
+      }
+      element.setAttribute('content', content);
+    };
+
+    const setCanonical = (url: string) => {
+      let element = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!element) {
+        element = document.createElement('link');
+        element.setAttribute('rel', 'canonical');
+        document.head.appendChild(element);
+      }
+      element.setAttribute('href', url);
+    };
+
+    document.title = pageTitle;
+    document.documentElement.lang = language === 'no' ? 'no' : 'en';
+    setMeta('name', 'description', pageDescription);
+    setCanonical(canonicalUrl);
+    setMeta('property', 'og:type', 'website');
+    setMeta('property', 'og:title', pageTitle);
+    setMeta('property', 'og:description', pageDescription);
+    setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'twitter:card', 'summary_large_image');
+    setMeta('property', 'twitter:title', pageTitle);
+    setMeta('property', 'twitter:description', pageDescription);
+  }, [canonicalUrl, language, pageDescription, pageTitle]);
 
   return (
     <div className="app-container">
