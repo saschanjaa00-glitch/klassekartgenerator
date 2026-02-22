@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Help } from './pages/Help';
@@ -10,13 +10,31 @@ import './App.css';
 function AppLayout() {
   const [language, setLanguage] = useState<Language>('no');
   const t = useMemo(() => createTranslator(language), [language]);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const storedLanguage = localStorage.getItem('language');
-    if (isLanguage(storedLanguage)) {
-      setLanguage(storedLanguage);
+    // Check if URL has /en or /no prefix
+    if (location.pathname.startsWith('/en')) {
+      setLanguage('en');
+      localStorage.setItem('language', 'en');
+      // Redirect to clean URL
+      const cleanPath = location.pathname.replace(/^\/en/, '') || '/';
+      navigate(cleanPath, { replace: true });
+    } else if (location.pathname.startsWith('/no')) {
+      setLanguage('no');
+      localStorage.setItem('language', 'no');
+      // Redirect to clean URL
+      const cleanPath = location.pathname.replace(/^\/no/, '') || '/';
+      navigate(cleanPath, { replace: true });
+    } else {
+      // Fall back to localStorage
+      const storedLanguage = localStorage.getItem('language');
+      if (isLanguage(storedLanguage)) {
+        setLanguage(storedLanguage);
+      }
     }
-  }, []);
+  }, [location, navigate]);
 
   useEffect(() => {
     localStorage.setItem('language', language);
