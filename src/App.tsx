@@ -93,6 +93,13 @@ function AppLayout() {
         <Route path="/" element={<Home language={language} />} />
         <Route path="/help" element={<Help language={language} />} />
         <Route path="/about" element={<About language={language} />} />
+        {/* Language-prefixed routes */}
+        <Route path="/en" element={<Home language={language} />} />
+        <Route path="/en/help" element={<Help language={language} />} />
+        <Route path="/en/about" element={<About language={language} />} />
+        <Route path="/no" element={<Home language={language} />} />
+        <Route path="/no/help" element={<Help language={language} />} />
+        <Route path="/no/about" element={<About language={language} />} />
       </Routes>
     </div>
   );
