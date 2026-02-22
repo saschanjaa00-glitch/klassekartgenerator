@@ -1,0 +1,71 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .header { fill: #1f2a30; }
+      .card { fill: #ffffff; stroke: #e0e0e0; stroke-width: 2; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #333; }
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1f2a30; }
+      .button { fill: #4a7c8c; }
+      .button-text { font-family: Arial, sans-serif; font-size: 12px; fill: white; font-weight: bold; }
+      .button-secondary { fill: #666; }
+      .student-chip { fill: #e8f4f8; stroke: #4a7c8c; stroke-width: 2; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#eef2f5"/>
+  
+  <!-- Header -->
+  <rect width="800" height="80" class="header"/>
+  <text x="400" y="45" text-anchor="middle" font-size="24" fill="white" font-weight="bold">mittKlassekart.com</text>
+  
+  <!-- Main content -->
+  <rect x="20" y="100" width="760" height="480" class="card" rx="8"/>
+  
+  <text x="40" y="140" class="title">Kontrollknapper</text>
+  
+  <!-- Control buttons grid -->
+  <g id="buttons">
+    <!-- Row 1 -->
+    <rect x="40" y="160" width="175" height="45" class="button" rx="4"/>
+    <text x="127.5" y="189" text-anchor="middle" class="button-text">Plasser automatisk</text>
+    
+    <rect x="230" y="160" width="175" height="45" class="button" rx="4"/>
+    <text x="317.5" y="189" text-anchor="middle" class="button-text">Omorganisér</text>
+    
+    <rect x="420" y="160" width="175" height="45" class="button" rx="4"/>
+    <text x="507.5" y="189" text-anchor="middle" class="button-text">Fjern plassering</text>
+    
+    <rect x="610" y="160" width="150" height="45" class="button" rx="4"/>
+    <text x="685" y="189" text-anchor="middle" class="button-text">Fjern alle</text>
+    
+    <!-- Row 2 -->
+    <rect x="40" y="220" width="175" height="45" class="button" rx="4"/>
+    <text x="127.5" y="249" text-anchor="middle" class="button-text">Innstillinger</text>
+    
+    <rect x="230" y="220" width="175" height="45" class="button" rx="4"/>
+    <text x="317.5" y="249" text-anchor="middle" class="button-text">Kopier bilde</text>
+    
+    <rect x="420" y="220" width="175" height="45" class="button" rx="4"/>
+    <text x="507.5" y="249" text-anchor="middle" class="button-text">Lagre som PNG</text>
+    
+    <rect x="610" y="220" width="150" height="45" class="button" rx="4"/>
+    <text x="685" y="249" text-anchor="middle" class="button-text">Lagre som PDF</text>
+  </g>
+  
+  <!-- Description -->
+  <text x="40" y="310" class="label">Disse kontrollene lar deg manipulere klassekartet på ulike måter:</text>
+  
+  <circle cx="50" cy="340" r="4" fill="#4a7c8c"/>
+  <text x="70" y="345" font-family="Arial" font-size="13" fill="#333">Plasser automatisk: Arrangerer elevers tilfeldig</text>
+  
+  <circle cx="50" cy="375" r="4" fill="#4a7c8c"/>
+  <text x="70" y="380" font-family="Arial" font-size="13" fill="#333">Omorganisér: Bytter rundt på allerede plasserte elever</text>
+  
+  <circle cx="50" cy="410" r="4" fill="#4a7c8c"/>
+  <text x="70" y="415" font-family="Arial" font-size="13" fill="#333">Fjern plassering: Gjør alle elever uplasserte</text>
+  
+  <circle cx="50" cy="445" r="4" fill="#4a7c8c"/>
+  <text x="70" y="450" font-family="Arial" font-size="13" fill="#333">Innstillinger: Åpner avanserte alternativer</text>
+  
+</svg>

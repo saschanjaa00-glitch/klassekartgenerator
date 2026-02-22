@@ -1,0 +1,81 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .header { fill: #1f2a30; }
+      .card { fill: #ffffff; stroke: #e0e0e0; stroke-width: 2; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #333; }
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1f2a30; }
+      .button { fill: #4a7c8c; }
+      .button-text { font-family: Arial, sans-serif; font-size: 12px; fill: white; font-weight: bold; }
+      .student-chip { fill: #e8f4f8; stroke: #4a7c8c; stroke-width: 2; }
+      .seat { fill: #f0f0f0; stroke: #999; stroke-width: 1; }
+      .occupied { fill: #a8d5e2; stroke: #4a7c8c; stroke-width: 2; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#eef2f5"/>
+  
+  <!-- Header -->
+  <rect width="800" height="80" class="header"/>
+  <text x="400" y="45" text-anchor="middle" font-size="24" fill="white" font-weight="bold">mittKlassekart.com</text>
+  
+  <!-- Main content - Seating Grid -->
+  <rect x="20" y="100" width="760" height="480" class="card" rx="8"/>
+  
+  <text x="40" y="140" class="title">Klassekart: Klasse 5A</text>
+  
+  <!-- Seating grid visual -->
+  <text x="40" y="180" font-family="Arial" font-size="12" fill="#666">Rader × Kolonner</text>
+  
+  <!-- Grid visual representation -->
+  <g id="grid">
+    <!-- Row 1 -->
+    <rect x="60" y="200" width="60" height="50" class="occupied"/>
+    <text x="90" y="232" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Ole</text>
+    
+    <rect x="130" y="200" width="60" height="50" class="occupied"/>
+    <text x="160" y="232" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Eva</text>
+    
+    <rect x="200" y="200" width="60" height="50" class="seat"/>
+    <rect x="270" y="200" width="60" height="50" class="occupied"/>
+    <text x="300" y="232" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Knut</text>
+    
+    <rect x="340" y="200" width="60" height="50" class="occupied"/>
+    <text x="370" y="232" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Tina</text>
+    
+    <!-- Row 2 -->
+    <rect x="60" y="260" width="60" height="50" class="seat"/>
+    <rect x="130" y="260" width="60" height="50" class="occupied"/>
+    <text x="160" y="292" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Peer</text>
+    
+    <rect x="200" y="260" width="60" height="50" class="occupied"/>
+    <text x="230" y="292" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Siri</text>
+    
+    <rect x="270" y="260" width="60" height="50" class="seat"/>
+    <rect x="340" y="260" width="60" height="50" class="occupied"/>
+    <text x="370" y="292" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Jon</text>
+    
+    <!-- Row 3 -->
+    <rect x="60" y="320" width="60" height="50" class="occupied"/>
+    <text x="90" y="352" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Mari</text>
+    
+    <rect x="130" y="320" width="60" height="50" class="occupied"/>
+    <text x="160" y="352" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Kim</text>
+    
+    <rect x="200" y="320" width="60" height="50" class="occupied"/>
+    <text x="230" y="352" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Arne</text>
+    
+    <rect x="270" y="320" width="60" height="50" class="seat"/>
+    <rect x="340" y="320" width="60" height="50" class="occupied"/>
+    <text x="370" y="352" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Hanne</text>
+  </g>
+  
+  <!-- Legend -->
+  <rect x="60" y="410" width="15" height="15" class="occupied"/>
+  <text x="80" y="422" font-family="Arial" font-size="12" fill="#333">Opptatt</text>
+  
+  <rect x="200" y="410" width="15" height="15" class="seat"/>
+  <text x="220" y="422" font-family="Arial" font-size="12" fill="#333">Tomt sete</text>
+  
+</svg>

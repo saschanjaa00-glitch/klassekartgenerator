@@ -1,0 +1,77 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .header { fill: #1f2a30; }
+      .card { fill: #ffffff; stroke: #e0e0e0; stroke-width: 2; }
+      .section { fill: #f9f9f9; stroke: #e0e0e0; stroke-width: 1; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #333; }
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1f2a30; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #2f3d45; }
+      .button { fill: #4a7c8c; }
+      .button-text { font-family: Arial, sans-serif; font-size: 12px; fill: white; font-weight: bold; }
+      .student-chip { fill: #e8f4f8; stroke: #4a7c8c; stroke-width: 2; rx: 20; }
+      .student-chip-selected { fill: #4a7c8c; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#eef2f5"/>
+  
+  <!-- Header -->
+  <rect width="800" height="80" class="header"/>
+  <text x="400" y="45" text-anchor="middle" font-size="24" fill="white" font-weight="bold">mittKlassekart.com</text>
+  
+  <!-- Main content -->
+  <rect x="20" y="100" width="760" height="480" class="card" rx="8"/>
+  
+  <text x="40" y="140" class="title">Begrensninger</text>
+  
+  <!-- Two column layout -->
+  <!-- Left column: Plasser sammen -->
+  <rect x="40" y="160" width="350" height="400" class="section" rx="4"/>
+  <text x="60" y="185" class="subtitle">Plasser sammen</text>
+  <text x="60" y="205" font-family="Arial" font-size="12" fill="#666">Velg elever som må sitte ved siden av hverandre</text>
+  
+  <!-- Student chips -->
+  <rect x="60" y="225" width="70" height="30" class="student-chip" rx="15"/>
+  <text x="95" y="246" text-anchor="middle" font-family="Arial" font-size="12" fill="#4a7c8c" font-weight="bold">Ole</text>
+  
+  <rect x="145" y="225" width="70" height="30" class="student-chip" rx="15"/>
+  <text x="180" y="246" text-anchor="middle" font-family="Arial" font-size="12" fill="#4a7c8c" font-weight="bold">Eva</text>
+  
+  <rect x="230" y="225" width="75" height="30" fill="#4a7c8c" rx="15"/>
+  <text x="267.5" y="246" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Knut</text>
+  
+  <!-- Button -->
+  <rect x="60" y="275" width="150" height="35" class="button" rx="4"/>
+  <text x="135" y="298" text-anchor="middle" class="button-text">Legg til gruppe</text>
+  
+  <!-- Constraint list -->
+  <text x="60" y="330" font-family="Arial" font-size="12" fill="#333" font-weight="bold">Aktive grupper:</text>
+  <rect x="60" y="345" width="310" height="30" fill="white" stroke="#ccc" stroke-width="1" rx="3"/>
+  <text x="70" y="366" font-family="Arial" font-size="12" fill="#333">Ole + Eva + Knut</text>
+  <text x="340" y="361" font-family="Arial" font-size="20" fill="#999">×</text>
+  
+  <!-- Right column: Hold fra hverandre -->
+  <rect x="410" y="160" width="350" height="400" class="section" rx="4"/>
+  <text x="430" y="185" class="subtitle">Hold fra hverandre</text>
+  <text x="430" y="205" font-family="Arial" font-size="12" fill="#666">Velg par som ikke skal sitte ved siden av hverandre</text>
+  
+  <!-- Student chips -->
+  <rect x="430" y="225" width="70" height="30" class="student-chip" rx="15"/>
+  <text x="465" y="246" text-anchor="middle" font-family="Arial" font-size="12" fill="#4a7c8c" font-weight="bold">Siri</text>
+  
+  <rect x="515" y="225" width="75" height="30" fill="#4a7c8c" rx="15"/>
+  <text x="552.5" y="246" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">Jon</text>
+  
+  <!-- Button -->
+  <rect x="430" y="275" width="150" height="35" class="button" rx="4"/>
+  <text x="505" y="298" text-anchor="middle" class="button-text">Legg til par</text>
+  
+  <!-- Constraint list -->
+  <text x="430" y="330" font-family="Arial" font-size="12" fill="#333" font-weight="bold">Aktive par:</text>
+  <rect x="430" y="345" width="310" height="30" fill="white" stroke="#ccc" stroke-width="1" rx="3"/>
+  <text x="440" y="366" font-family="Arial" font-size="12" fill="#333">Siri ≠ Jon</text>
+  <text x="710" y="361" font-family="Arial" font-size="20" fill="#999">×</text>
+  
+</svg>

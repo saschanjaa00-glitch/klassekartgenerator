@@ -1,0 +1,53 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .header { fill: #1f2a30; }
+      .card { fill: #ffffff; stroke: #e0e0e0; stroke-width: 2; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #333; }
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1f2a30; }
+      .button { fill: #4a7c8c; }
+      .button-text { font-family: Arial, sans-serif; font-size: 12px; fill: white; font-weight: bold; }
+      .item-box { fill: #f5f9fc; stroke: #4a7c8c; stroke-width: 2; }
+      .icon { font-size: 32px; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#eef2f5"/>
+  
+  <!-- Header -->
+  <rect width="800" height="80" class="header"/>
+  <text x="400" y="45" text-anchor="middle" font-size="24" fill="white" font-weight="bold">mittKlassekart.com</text>
+  
+  <!-- Main content -->
+  <rect x="20" y="100" width="760" height="480" class="card" rx="8"/>
+  
+  <text x="40" y="140" class="title">Eksportformat</text>
+  <text x="40" y="165" font-family="Arial" font-size="13" fill="#666">Du kan eksportere klassekartet i flere format:</text>
+  
+  <!-- Export options grid -->
+  <!-- Clipboard -->
+  <rect x="40" y="190" width="350" height="100" class="item-box" rx="6"/>
+  <text x="50" y="215" font-size="20">📋</text>
+  <text x="85" y="215" class="title" font-size="16">Kopier til utklippstavle</text>
+  <text x="50" y="245" font-family="Arial" font-size="12" fill="#555">Kopier som bilde som du kan lime inn direkte i dokumenter</text>
+  
+  <!-- PNG -->
+  <rect x="410" y="190" width="350" height="100" class="item-box" rx="6"/>
+  <text x="420" y="215" font-size="20">🖼️</text>
+  <text x="455" y="215" class="title" font-size="16">Lagre som PNG</text>
+  <text x="420" y="245" font-family="Arial" font-size="12" fill="#555">Lagre som PNG-bildefil som du kan dele eller arkivere</text>
+  
+  <!-- PDF -->
+  <rect x="40" y="310" width="350" height="100" class="item-box" rx="6"/>
+  <text x="50" y="335" font-size="20">📄</text>
+  <text x="85" y="335" class="title" font-size="16">Lagre som PDF</text>
+  <text x="50" y="365" font-family="Arial" font-size="12" fill="#555">Lagre som PDF-dokument i A4 format (landskap) for utskrift</text>
+  
+  <!-- Print -->
+  <rect x="410" y="310" width="350" height="100" class="item-box" rx="6"/>
+  <text x="420" y="335" font-size="20">🖨️</text>
+  <text x="455" y="335" class="title" font-size="16">Skriv ut</text>
+  <text x="420" y="365" font-family="Arial" font-size="12" fill="#555">Åpne utskriftsdialog for direkteutskrift fra nettleseren</text>
+  
+</svg>
